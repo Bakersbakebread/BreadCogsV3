@@ -1,0 +1,25 @@
+TODO: 
+
+[x]  Create Command 
+
+[x]    Creates ModMail Category
+[x]    Displays Help Message in HELP channel
+[x]    Stores Help Message ID in config
+[x]    Creates ModMail Log Channel (stores ID in config)
+
+[ ]    Create help message
+[ ]    format sent message
+
+[ ]  Message Recieved in DM
+[ ]    Check to see if guilds > 1, if so ask user to post ?modmail in channel (or react) // todo add multiple in dm'see
+[ ]    If < 1 post to channel 
+[x]      create Channel
+[x]        User info as topic of channel
+[x]        name of channel : Username+ID
+[ ]        check is user has channel already
+[x]      Post Message
+[ ]        Userinfo in top of channel in embed
+
+[ ]        Make first_reply message customable and toggable
+            
+
