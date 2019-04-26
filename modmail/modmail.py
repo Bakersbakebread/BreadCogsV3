@@ -1,8 +1,7 @@
 import discord
 from discord.ext import commands
 
-from . import handle_messages, block
-from . import create
+from . import handle_messages, create
 
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
@@ -59,13 +58,30 @@ class Modmail(commands.Cog):
             if x.name != 'test':
                 await x.delete()
 
+    async def is_user_blocked(self, user, config):
+        """Find out if user is blocked"""
+        async with config.blocked() as blocked:
+            if user.id in blocked:
+                return True
+            else:
+                return False
+
+    async def toggle_blocked(self, user, config):
+        async with config.blocked() as blocked:
+            if user.id in blocked:
+                blocked.remove(user.id)
+            else:
+                blocked.append(user.id)
+
     @commands.command()
     async def block(self, ctx, user: discord.Member):
         """Block a user from message mod's."""
         if user.id == ctx.me.id:
             return await ctx.send(':thinking: It\'s not a good idea to block me.')
-        user_blocked = await block.safe_block_user(user, self.config)
-        if user_blocked:
+
+        user_blocked = await self.is_user_blocked(user, self.config)
+        if not user_blocked:
+            await self.toggle_blocked(user, self.config)
             await ctx.send(f'🛡️ :mute: {user.name} has been blocked.')
         else:
             await ctx.send(f":no_entry: :mute: {user.name} is already blocked.")
@@ -75,8 +91,9 @@ class Modmail(commands.Cog):
         """Block a user from message mod's."""
         if user.id == ctx.me.id:
             await ctx.send(':thinking:')
-        unblocked = await block.safe_unblock_user(user, self.config)
-        if unblocked:
+        blocked = await self.is_user_blocked(user, self.config)
+        if blocked:
+            await self.toggle_blocked(user, self.config)
             await ctx.send(f':loud_sound: {user.name} has been unblocked.')
         else:
             await ctx.send(f":no_entry: {user.name} is not blocked.")
