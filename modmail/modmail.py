@@ -63,14 +63,9 @@ class Modmail(commands.Cog):
             if x.name != 'test':
                 await x.delete()
 
-    @commands.command()
-    async def test(self, ctx):
-        await ctx.send("Spinning up Flask")
-        await ctx.send("Flask App Running on localhost:8990")
     ####################
     # blocking users   #
     ####################
-
     @staticmethod
     async def is_user_blocked(user, config):
         """Find out if user is blocked"""
