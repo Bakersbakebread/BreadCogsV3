@@ -17,10 +17,8 @@ async def get_allowed_roles(ctx):
     return roles
 
 async def user_info_embed(user):
-    embed = discord.Embed(
-        title=f"👤 {user.name} - {user.id}",
-        description="""Information about user:""" ,
-        )
+    embed = discord.Embed(title=f"👤 {user.name} - {user.id}",
+        description="""Information about user:""" ,)
     embed.set_thumbnail(url=user.avatar_url)
     
     return embed
@@ -28,23 +26,18 @@ async def user_info_embed(user):
 async def display_help_embed():
     embeds = []
     
-    setup = discord.Embed(
-        title='ModMail Help',
+    setup = discord.Embed(title='ModMail Help',
         description=("""Description to go here I guess"""))
     setup.add_field(name="👍", value="Help Channel")
     setup.add_field(name="👍", value="ModMail Log Channel")
     setup.add_field(name="👎", value="Another SEttings")
 
-    settings_active = discord.Embed(
-        title="⚙️ Active ModMail Settings",
-    )
+    settings_active = discord.Embed(title="⚙️ Active ModMail Settings",)
 
-    settings_active.add_field(
-        name="✔️ Active Settings", 
+    settings_active.add_field(name="✔️ Active Settings", 
         value="Setting 1\nSetting 2\nSetting 3")
 
-    settings_active.add_field(
-        name="❌ Disabled Settings", 
+    settings_active.add_field(name="❌ Disabled Settings", 
         value="Setting 1\nSetting 2\nSetting 3")
 
     embeds.append(setup)
@@ -71,8 +64,7 @@ async def new_modmail(ctx, config):
     # @everyone won't be able to see, but everyone with manage guild can
     # this will umbrella the cat to every channel
     overwrite = {
-        ctx.guild.default_role: discord.PermissionOverwrite(
-            read_messages=False)
+        ctx.guild.default_role: discord.PermissionOverwrite(read_messages=False)
     }
     for role in manage_messages_roles:
         overwrite[role] = discord.PermissionOverwrite(read_messages=True)
@@ -84,12 +76,10 @@ async def new_modmail(ctx, config):
 
     # create the help & log channel
     try:
-        help_channel = await ctx.guild.create_text_channel(
-            name='Help',
+        help_channel = await ctx.guild.create_text_channel(name='Help',
             category=category)
 
-        log_channel = await ctx.guild.create_text_channel(
-            name='ModMail Log',
+        log_channel = await ctx.guild.create_text_channel(name='ModMail Log',
             category=category)
 
     except discord.errors.Forbidden:
@@ -110,16 +100,24 @@ async def new_modmail_thread(bot, guild, user):
 
     category = discord.utils.get(guild.categories, name=CATEGORY_NAME)
 
-    if not category:
-            # TODO: Move into DM owner?
-        print('No Category')
 
-    new_thread = await guild.create_text_channel(
-        name=thread_name,
-        category=category,
-        topic=await format_channel_topic(user),
-        reason=f"New ModMail Thread for {user.name}")
+    try:
+        new_thread = await guild.create_text_channel(
+            name=thread_name,
+            category=category,
+            topic=await format_channel_topic(user),
+            reason=f"New ModMail Thread for {user.name}")
+    except discord.errors.Forbidden as e:
+        print(f"[ModMail] {e} - could not create channel.")
+        return False
+        
+    if not category:
+        # TODO: Move into DM owner?
+        category_error = "Could not assign channel to ModMail Category."
+        owner = await bot.get_user_info(bot.owner_id)
+        await owner.send(category_error)
+        await new_thread.send(category_error)
     
-    await new_thread.send(embed = await user_info_embed(user) )
+    await new_thread.send(embed = await user_info_embed(user))
 
     return new_thread

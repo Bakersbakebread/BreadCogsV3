@@ -3,6 +3,8 @@ from discord.ext import commands
 
 from . import handle_messages, create
 
+import datetime
+
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 
@@ -27,7 +29,10 @@ class Modmail(commands.Cog):
             # TODO: Move blocked into here
             "info": {
                 "counter": 0,
-                "last_messaged": None
+                "last_messaged": None,
+                "guild_id": 0,
+                "is_waiting": False,
+                "multi_guild_hold": False
             }
         }
         self.config.register_user(**default_user)
@@ -58,7 +63,16 @@ class Modmail(commands.Cog):
             if x.name != 'test':
                 await x.delete()
 
-    async def is_user_blocked(self, user, config):
+    @commands.command()
+    async def test(self, ctx):
+        await ctx.send("Spinning up Flask")
+        await ctx.send("Flask App Running on localhost:8990")
+    ####################
+    # blocking users   #
+    ####################
+
+    @staticmethod
+    async def is_user_blocked(user, config):
         """Find out if user is blocked"""
         async with config.blocked() as blocked:
             if user.id in blocked:
@@ -66,8 +80,8 @@ class Modmail(commands.Cog):
             else:
                 return False
 
-    async def toggle_blocked(self, user, config):
-        async with config.blocked() as blocked:
+    async def toggle_blocked(self, user):
+        async with self.config.blocked() as blocked:
             if user.id in blocked:
                 blocked.remove(user.id)
             else:
@@ -81,7 +95,7 @@ class Modmail(commands.Cog):
 
         user_blocked = await self.is_user_blocked(user, self.config)
         if not user_blocked:
-            await self.toggle_blocked(user, self.config)
+            await self.toggle_blocked(user)
             await ctx.send(f'🛡️ :mute: {user.name} has been blocked.')
         else:
             await ctx.send(f":no_entry: :mute: {user.name} is already blocked.")
@@ -93,7 +107,7 @@ class Modmail(commands.Cog):
             await ctx.send(':thinking:')
         blocked = await self.is_user_blocked(user, self.config)
         if blocked:
-            await self.toggle_blocked(user, self.config)
+            await self.toggle_blocked(user)
             await ctx.send(f':loud_sound: {user.name} has been unblocked.')
         else:
             await ctx.send(f":no_entry: {user.name} is not blocked.")
