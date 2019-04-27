@@ -1,5 +1,6 @@
 import discord
-
+import json
+import os
 from datetime import datetime 
 
 from redbot.core import Config, checks, commands
@@ -7,15 +8,21 @@ from redbot.core.bot import Red
 
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
+from redbot.core.data_manager import cog_data_path
 
 from . import create
 
 from modmail import modmail
 from tabulate import tabulate
 
+
+with open (os.path.join(cog_data_path(raw_name="ModMail"), 'dictionary.json')) as json_file:
+    data = json.load(json_file)
+
 async def please_wait_reply(author):
     # message = "Your message has been recieved. Someone will reply as soon as possible."
-    message = "Thanks for helping."
+    
+    message = data.get('help_message', 'Thanks for helping')
     await author.send(message)
 
 async def message_from_user_embed(message, author):
@@ -34,14 +41,14 @@ async def channel_finder(author, guild):
         if str(author.id) in channel.name:
             return channel
 
-
 async def message_mods(bot, message, config):
     author = message.author
+    await please_wait_reply(author)
     author_config = await config.user(author).info()
 
-    #if author_config['multi_guild_hold']:
-    #    print("multi-hold")
-    #    return
+    if author_config['multi_guild_hold']:
+       await author.send("Please react to the corresponding guild.")
+       return
 
     #if author_config['is_waiting']:
     #    return await author.send("Your message has been recieved, please allow some time before sending another")
@@ -71,8 +78,10 @@ async def message_mods(bot, message, config):
         emojis = ReactionPredicate.NUMBER_EMOJIS[:len(guilds)]
 
         start_adding_reactions(msg, emojis)
+
         pred = ReactionPredicate.with_emojis(emojis, msg)
         await bot.wait_for("reaction_add", check=pred)
+
         await author.send(pred.result)
 
         guild = guilds[pred.result]
@@ -81,13 +90,15 @@ async def message_mods(bot, message, config):
         guild = guilds[0]
 
     async with config.user(author).info() as history:
+        # set waiting to True (reset it on reply)
         now = datetime.now()
         try:
-            print('[ModMail] Attempting to find {author.name} message frequncy')
+            print(f'[ModMail] Attempting to find {author.name} message frequncy')
             history['counter'] += 1
             history['last_messaged'] = datetime.timestamp(now)
             history['is_waiting'] = True
             history['guild_id'] = guild.id
+            history['multi_guild_hold'] = False
             print(f"[ModMail] {author.name} message frequency: {history['counter']}")
         except KeyError:
             print('[ModMail] User not found, created a new entry')
@@ -95,6 +106,7 @@ async def message_mods(bot, message, config):
             history['last_messaged'] = datetime.timestamp(now)
             history['is_waiting'] = True
             history['guild_id'] = guild.id
+            history['multi_guild_hold'] = False
 
     modmail_thread = await channel_finder(author, guild)
 
@@ -102,7 +114,7 @@ async def message_mods(bot, message, config):
         modmail_thread = await create.new_modmail_thread(bot, guild, author)
         if not modmail_thread:
             return await author.send(
-                "Missing permissions from the guild you are trying to send a message to, please speak with owner of said guild.")
+                ":shield: Missing permissions from that guild.")
 
     await modmail_thread.send(
         embed = await message_from_user_embed(message, author))
