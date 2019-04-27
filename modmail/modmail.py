@@ -8,7 +8,6 @@ import datetime
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 
-
 class Modmail(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -22,6 +21,9 @@ class Modmail(commands.Cog):
         default_guild = {
             "help_message_id": None,
             "log_channel_id": None,
+            "dictionary":{
+                "wait_for_reply":"Thanks for helping!"
+            }
         }
         self.config.register_guild(**default_guild)
 
@@ -91,7 +93,7 @@ class Modmail(commands.Cog):
         user_blocked = await self.is_user_blocked(user, self.config)
         if not user_blocked:
             await self.toggle_blocked(user)
-            await ctx.send(f'🛡️ :mute: {user.name} has been blocked.')
+            await ctx.send(f':shield: :mute: {user.name} has been blocked.')
         else:
             await ctx.send(f":no_entry: :mute: {user.name} is already blocked.")
 
