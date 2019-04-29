@@ -15,9 +15,11 @@ from . import create
 from modmail import modmail
 from tabulate import tabulate
 
+#try:
+#    with open (os.path.join(cog_data_path(raw_name="ModMail"), 'dictionary.json')) as json_file:
+#        data = json.load(json_file)
+#except FileNotFoundError:
 
-with open (os.path.join(cog_data_path(raw_name="ModMail"), 'dictionary.json')) as json_file:
-    data = json.load(json_file)
 
 async def please_wait_reply(author):
     # message = "Your message has been recieved. Someone will reply as soon as possible."
