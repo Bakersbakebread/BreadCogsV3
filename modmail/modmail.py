@@ -20,10 +20,7 @@ class Modmail(commands.Cog):
 
         default_guild = {
             "help_message_id": None,
-            "log_channel_id": None,
-            "dictionary":{
-                "wait_for_reply":"Thanks for helping!"
-            }
+            "log_channel_id": None
         }
         self.config.register_guild(**default_guild)
 
@@ -34,7 +31,8 @@ class Modmail(commands.Cog):
                 "last_messaged": None,
                 "guild_id": 0,
                 "is_waiting": False,
-                "multi_guild_hold": False
+                "multi_guild_hold": False,
+                "thread_id": 0
             }
         }
         self.config.register_user(**default_user)
@@ -66,6 +64,16 @@ class Modmail(commands.Cog):
                 await x.delete()
 
     ####################
+    # replying to user #
+    ####################
+    @commands.command()
+    async def reply(self, ctx, user: discord.Member):
+        if not user:
+            await ctx.send('no user')
+        await ctx.send(user.id)
+    
+    
+    #####################
     # blocking users   #
     ####################
     @staticmethod

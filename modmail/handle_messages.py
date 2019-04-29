@@ -15,35 +15,31 @@ from . import create
 from modmail import modmail
 from tabulate import tabulate
 
-#try:
-#    with open (os.path.join(cog_data_path(raw_name="ModMail"), 'dictionary.json')) as json_file:
-#        data = json.load(json_file)
-#except FileNotFoundError:
+
+with open (os.path.join(cog_data_path(raw_name="ModMail"), 'dictionary.json')) as json_file:
+    data = json.load(json_file)
 
 
-async def please_wait_reply(author):
-    # message = "Your message has been recieved. Someone will reply as soon as possible."
+async def please_wait_reply ( author ):
+    # message = "Your message has been recieved.  Someone will reply as soon as
+    # possible."
     
     message = data.get('help_message', 'Thanks for helping')
     await author.send(message)
 
-async def message_from_user_embed(message, author):
+async def message_from_user_embed ( message, author ):
     # TODO: Handle attachments
-    message_from_user = discord.Embed(
-        description=(f"{message.content}")
-    )
-    message_from_user.set_author(
-        name=f"{author.name}",
-        icon_url=f"{author.avatar_url}"
-    )
+    message_from_user = discord.Embed(description=(f"{message.content}"))
+    message_from_user.set_author(name=f"{author.name}",
+        icon_url=f"{author.avatar_url}")
     return message_from_user
 
-async def channel_finder(author, guild):
+async def channel_finder ( author, guild ):
     for channel in guild.channels:
         if str(author.id) in channel.name:
             return channel
 
-async def message_mods(bot, message, config):
+async def message_mods ( bot, message, config ):
     author = message.author
     await please_wait_reply(author)
     author_config = await config.user(author).info()
@@ -53,14 +49,16 @@ async def message_mods(bot, message, config):
        return
 
     #if author_config['is_waiting']:
-    #    return await author.send("Your message has been recieved, please allow some time before sending another")
+    #    return await author.send("Your message has been recieved, please allow
+    #    some time before sending another")
 
     user_is_blocked = await modmail.Modmail.is_user_blocked(author, config)
     if user_is_blocked:
         print(f"Blocked user attempted to message : {author.name}")
         return await author.send("You are have been blocked from sending ModMail messages.")
 
-    # # channel_name = discord.utils.get(self.bot.guilds, id=556800157082058784)
+    # # channel_name = discord.utils.get(self.bot.guilds,
+    # id=556800157082058784)
 
     # Get a list of guilds the user & bot share
     guilds = [member.guild for member in bot.get_all_members()
@@ -74,8 +72,7 @@ async def message_mods(bot, message, config):
 
         #for (index, guild) in enumerate(guilds):
         #    table = [[index, guild.name]]
-        await author.send(
-            "We have more than one server in common, please choose from list below where you would like to send the message.")
+        await author.send("We have more than one server in common, please choose from list below where you would like to send the message.")
         msg = await author.send(f"```{tabulate(table, tablefmt='presto')}```")
         emojis = ReactionPredicate.NUMBER_EMOJIS[:len(guilds)]
 
@@ -93,6 +90,7 @@ async def message_mods(bot, message, config):
 
     async with config.user(author).info() as history:
         # set waiting to True (reset it on reply)
+        await author.send(history)
         now = datetime.now()
         try:
             print(f'[ModMail] Attempting to find {author.name} message frequncy')
@@ -111,12 +109,12 @@ async def message_mods(bot, message, config):
             history['multi_guild_hold'] = False
 
     modmail_thread = await channel_finder(author, guild)
-
     if not modmail_thread:
         modmail_thread = await create.new_modmail_thread(bot, guild, author)
         if not modmail_thread:
-            return await author.send(
-                ":shield: Missing permissions from that guild.")
+            return await author.send(":shield: Missing permissions from that guild.")
 
-    await modmail_thread.send(
-        embed = await message_from_user_embed(message, author))
+    async with config.user(author).info() as history:
+        history['thread_id'] = modmail_thread.id
+
+    await modmail_thread.send(embed = await message_from_user_embed(message, author))
