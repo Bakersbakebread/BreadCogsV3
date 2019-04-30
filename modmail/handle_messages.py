@@ -19,27 +19,32 @@ from tabulate import tabulate
 with open(
     os.path.join(cog_data_path(raw_name="ModMail"), "dictionary.json")
 ) as json_file:
-    data = json.load(json_file)
+    label = json.load(json_file)
 
 
 async def please_wait_reply(author):
     # message = "Your message has been recieved.  Someone will reply as soon as
     # possible."
 
-    message = data.get("help_message", "Thanks for helping")
+    message = label.get("help_message", "Thanks for helping")
     await author.send(message)
 
 
-async def message_embed(message, author, is_mod=False):
+async def message_embed(message, author, is_mod=True, is_anon=True, is_not_reply=True):
     # TODO: Handle attachments
     # TODO: Make colors custom
     color = discord.Color.green() if is_mod else discord.Color.orange()
 
     embed = discord.Embed(description=(f"{message.content}"), color=color)
 
-    embed.set_author(name=f"{author.name}", icon_url=f"{author.avatar_url}")
-
-    salutation = "Mod" if is_mod else "User"
+    embed.set_author(
+        name=(f" " if is_anon else f"{author.name}"), 
+        icon_url=f"{author.avatar_url}")
+    
+    if is_not_reply:
+        salutation = "Mod" if is_mod else "User"
+    else:
+        salutation = "Click here to view more"
     embed.set_footer(text=f"{salutation}")
 
     return embed
@@ -51,12 +56,24 @@ async def channel_finder(author, guild):
             return channel
 
 
-async def reply_to_user(ctx, message, user):
+async def reply_to_user(ctx, message, user, is_anon):
     try:
-        await user.send(message.content)
-        await ctx.send(embed=await message_embed(message, user, True))
+        await user.send(f"`{label['handle_messages']['user_modmail_recieved']}`")
+        await user.send(
+            embed=await message_embed(
+                message,
+                ctx.author,
+                is_anon=is_anon,
+                is_not_reply=False)
+            )
+        await ctx.send(
+            embed=await message_embed(
+                message, 
+                user,
+                is_anon=False
+            ))
     except discord.errors.Forbidden:
-        await ctx.send("Unable to send DM to user.")
+        await ctx.send(f"{label['errors']['dm_not_allowed']}")
 
 
 async def message_mods(bot, message, config):
@@ -65,21 +82,26 @@ async def message_mods(bot, message, config):
 
     if user_info["multi_guild_hold"]:
         await author.send(
-            "Please react with the emoji corresponding to the guild you wish to send to."
+            f"{label['handle_messages']['guild_react_request']}"
         )
         return
 
     if user_info["thread_is_open"]:
         open_thread = bot.get_channel(user_info["thread_id"])
         if open_thread:
-            await open_thread.send(embed=await message_embed(message, author))
+            await open_thread.send(
+                embed=await message_embed(
+                    message, 
+                    author,
+                    is_mod=False,
+                    is_anon=False))
             return await message.add_reaction("✅")
 
     user_is_blocked = await modmail.Modmail.is_user_blocked(author, config)
     if user_is_blocked:
         print(f"[ModMail] Blocked user attempted to message : {author.name}")
         return await author.send(
-            "You are have been blocked from sending ModMail messages."
+            f"{label['errors']['user_is_blocked']}"
         )
 
     # # channel_name = discord.utils.get(self.bot.guilds,
@@ -146,4 +168,10 @@ async def message_mods(bot, message, config):
     async with config.user(author).info() as user_info:
         user_info["thread_id"] = modmail_thread.id
 
-    await modmail_thread.send(embed=await message_embed(message, author))
+    await modmail_thread.send(
+        embed=await message_embed(
+            message, 
+            author,
+            is_mod=False,
+            is_anon=False
+            ))
