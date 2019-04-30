@@ -96,18 +96,22 @@ class Modmail(commands.Cog):
 
         message = await ctx.bot.wait_for('message', check = check)
 
-        embed = discord.Embed(title="Your message", description=message.content)
+        await message.delete()
         await ask_for_message.delete()
-        reply_to_user = await ctx.send(embed=embed)
+
+        embed = discord.Embed(title="Your message", description=message.content)
+        reply = await ctx.send(embed=embed)
 
         approved = await yes_or_no(ctx, user)
 
         if approved:
-            await ctx.tick()
+            await reply_to_user(ctx, message, user)
         else:
             await ctx.send('Ok. Message not sent.')
 
-        await reply_to_user(ctx, str(message.content), user)
+        await reply.delete()
+        await ctx.message.delete()
+
 
     #####################
     # blocking users   #

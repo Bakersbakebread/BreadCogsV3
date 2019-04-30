@@ -33,7 +33,7 @@ async def please_wait_reply(author):
 async def message_embed(message, author, is_mod=False):
     # TODO: Handle attachments
     # TODO: Make colors custom
-    color = discord.Color.Green() if is_mod else discord.Color.orange()
+    color = discord.Color.green() if is_mod else discord.Color.orange()
 
     embed = discord.Embed(description=(f"{message.content}"), color=color)
 
@@ -53,7 +53,8 @@ async def channel_finder(author, guild):
 
 async def reply_to_user(ctx, message, user):
     try:
-        await user.send(message)
+        await user.send(message.content)
+        await ctx.send(embed=await message_embed(message, user, True))
     except discord.errors.Forbidden:
         await ctx.send("Unable to send DM to user.")
 
