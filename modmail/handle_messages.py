@@ -38,9 +38,9 @@ async def message_embed(message, author, is_mod=True, is_anon=True, is_not_reply
     embed = discord.Embed(description=(f"{message.content}"), color=color)
 
     embed.set_author(
-        name=(f" " if is_anon else f"{author.name}"), 
-        icon_url=f"{author.avatar_url}")
-    
+        name=(f" " if is_anon else f"{author.name}"), icon_url=f"{author.avatar_url}"
+    )
+
     if is_not_reply:
         salutation = "Mod" if is_mod else "User"
     else:
@@ -61,17 +61,10 @@ async def reply_to_user(ctx, message, user, is_anon):
         await user.send(f"`{label['handle_messages']['user_modmail_recieved']}`")
         await user.send(
             embed=await message_embed(
-                message,
-                ctx.author,
-                is_anon=is_anon,
-                is_not_reply=False)
+                message, ctx.author, is_anon=is_anon, is_not_reply=False
             )
-        await ctx.send(
-            embed=await message_embed(
-                message, 
-                user,
-                is_anon=False
-            ))
+        )
+        await ctx.send(embed=await message_embed(message, user, is_anon=False))
     except discord.errors.Forbidden:
         await ctx.send(f"{label['errors']['dm_not_allowed']}")
 
@@ -81,28 +74,21 @@ async def message_mods(bot, message, config):
     user_info = await config.user(author).info()
 
     if user_info["multi_guild_hold"]:
-        await author.send(
-            f"{label['handle_messages']['guild_react_request']}"
-        )
+        await author.send(f"{label['handle_messages']['guild_react_request']}")
         return
 
     if user_info["thread_is_open"]:
         open_thread = bot.get_channel(user_info["thread_id"])
         if open_thread:
             await open_thread.send(
-                embed=await message_embed(
-                    message, 
-                    author,
-                    is_mod=False,
-                    is_anon=False))
+                embed=await message_embed(message, author, is_mod=False, is_anon=False)
+            )
             return await message.add_reaction("✅")
 
     user_is_blocked = await modmail.Modmail.is_user_blocked(author, config)
     if user_is_blocked:
         print(f"[ModMail] Blocked user attempted to message : {author.name}")
-        return await author.send(
-            f"{label['errors']['user_is_blocked']}"
-        )
+        return await author.send(f"{label['errors']['user_is_blocked']}")
 
     # # channel_name = discord.utils.get(self.bot.guilds,
     # id=556800157082058784)
@@ -169,9 +155,5 @@ async def message_mods(bot, message, config):
         user_info["thread_id"] = modmail_thread.id
 
     await modmail_thread.send(
-        embed=await message_embed(
-            message, 
-            author,
-            is_mod=False,
-            is_anon=False
-            ))
+        embed=await message_embed(message, author, is_mod=False, is_anon=False)
+    )

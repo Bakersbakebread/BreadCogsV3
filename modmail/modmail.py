@@ -12,6 +12,7 @@ from redbot.core.bot import Red
 
 from .utils import *
 
+
 class Modmail(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -81,29 +82,25 @@ class Modmail(commands.Cog):
     ####################
     @commands.command()
     async def reply(self, ctx, is_anon=False):
-        #is_thread = await self.is_thread(ctx.guild, ctx.channel)
-        #if not is_thread:
+        # is_thread = await self.is_thread(ctx.guild, ctx.channel)
+        # if not is_thread:
         #    return await ctx.send("This is not a thread.")
 
-        #user_id = ctx.channel.topic.split()[5]
+        # user_id = ctx.channel.topic.split()[5]
         user_id = 280730525960896513
         user = await self.bot.get_user_info(user_id)
 
-        anon = ("`Sending anonymously`" if is_anon else f" ")
-        ask_for_message = await ctx.send(
-            f'What is your reply? {anon}'
-            )
-        
+        anon = "`Sending anonymously`" if is_anon else f" "
+        ask_for_message = await ctx.send(f"What is your reply? {anon}")
+
         def check(m):
             return user.id == m.author.id
 
-        message = await ctx.bot.wait_for('message', check = check)
+        message = await ctx.bot.wait_for("message", check=check)
 
         await message.delete()
-        embed = discord.Embed(
-            title="Message preview",
-            description=message.content)
-        
+        embed = discord.Embed(title="Message preview", description=message.content)
+
         if is_anon:
             embed.set_footer(text="Sending message anonymously")
         reply = await ctx.send(embed=embed)
@@ -113,12 +110,11 @@ class Modmail(commands.Cog):
         if approved:
             await reply_to_user(ctx, message, user, is_anon)
         else:
-            await ctx.send('Ok. Message not sent.', delete_after=30)
+            await ctx.send("Ok. Message not sent.", delete_after=30)
 
         await reply.delete()
         await ctx.message.delete()
         await ask_for_message.delete()
-
 
     #####################
     # blocking users   #
