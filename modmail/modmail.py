@@ -94,7 +94,7 @@ class Modmail(commands.Cog):
         ask_for_message = await ctx.send(f"What is your reply? {anon}")
 
         def check(m):
-            return user.id == m.author.id 
+            return user.id == m.author.id  
 
         message = await ctx.bot.wait_for("message", check=check)
 
