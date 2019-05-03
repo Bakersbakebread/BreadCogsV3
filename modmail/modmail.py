@@ -37,6 +37,7 @@ class Modmail(commands.Cog):
                 "thread_is_open": False,
                 "multi_guild_hold": False,
                 "thread_id": 0,
+                "current_thread": [],
                 "archive": [],
             }
         }
@@ -53,6 +54,8 @@ class Modmail(commands.Cog):
         if channel_to_check.category is not None:
             if channel_to_check.category.id != config_category_id:
                 return False
+        else:
+            return False
         return True
 
     @commands.command()
@@ -80,6 +83,7 @@ class Modmail(commands.Cog):
     ####################
     # replying to user #
     ####################
+
     @commands.command()
     async def reply(self, ctx, *, quick_message=None):
         # is_thread = await self.is_thread(ctx.guild, ctx.channel)
@@ -96,16 +100,16 @@ class Modmail(commands.Cog):
             service = await reply_service(ctx, user)
             message = service[0]
 
-        embed = discord.Embed(
-        title="Message preview", 
-        description=message)
-        
+        embed = discord.Embed(title="Message preview", description=message)
+
         reply = await ctx.send(embed=embed)
 
-        approved = await yes_or_no(ctx, user)
+        approved = await yes_or_no(
+            ctx, message=f"Would you like to send message to {user.name}?"
+        )
 
         if approved:
-            await reply_to_user(ctx, message, user, is_anon=False)
+            await reply_to_user(ctx, self.config, message, user, is_anon=False)
         else:
             await ctx.send("Ok. Message not sent.", delete_after=30)
 
@@ -129,18 +133,17 @@ class Modmail(commands.Cog):
             service = await reply_service(ctx, user)
             message = service[0]
 
-        embed = discord.Embed(
-        title="Message preview", 
-        description=message)
-        embed.set_footer(text = await get_label('info', 'sending_anon'))
-        
+        embed = discord.Embed(title="Message preview", description=message)
+        embed.set_footer(text=await get_label("info", "sending_anon"))
+
         reply = await ctx.send(embed=embed)
 
-        approved = await yes_or_no(ctx, user)
-
+        approved = await yes_or_no(
+            ctx, message=f"Would you like to send message to {user.name}?"
+        )
 
         if approved:
-            await reply_to_user(ctx, message, user, is_anon=True)
+            await reply_to_user(ctx, self.config, message, user, is_anon=True)
         else:
             await ctx.send("Ok. Message not sent.", delete_after=30)
 
@@ -150,9 +153,53 @@ class Modmail(commands.Cog):
             await service[1].delete()
 
     #####################
+    # closing thread    #
+    #####################
+    @commands.command()
+    async def close(self, ctx, time_delay=None):
+        is_thread = await self.is_thread(ctx.guild, ctx.channel)
+        if not is_thread:
+            return await ctx.send("This is not a thread.")
+
+        approved = await yes_or_no(
+            ctx, message="Are you sure you want to close this thread?"
+        )
+        if not approved:
+            await ctx.message.delete()
+            return await ctx.send("Okay. Thread will remain open.", delete_after=30)
+
+        loading = await ctx.send(":hourglass: Closing ModMail Thread")
+
+        user_id = ctx.channel.topic.split()[5]
+        user = await self.bot.get_user_info(user_id)
+        
+        async with self.config.user(user).info() as user_info:
+            current_thread = {user_info['thread_id'] :user_info['current_thread']}
+            
+            user_info.update(
+                {"thread_is_open": False, 
+                 "thread_id": 0,
+                 "current_thread": []})
+
+            user_info['archive'].append(current_thread)
+
+        embed = discord.Embed(
+            title=f" ",
+            description=f"ModMail Thread closed by {ctx.author.name}",
+            color=discord.Color.red(),
+        )
+        await loading.edit(embed=embed, content=f" ")
+        approved = await yes_or_no(
+            ctx, message="Would you like to delete the channel?"
+        )
+        if approved:
+            await ctx.send("Delete")
+        else:
+            await ctx.send("dont")
+
+    #####################
     # blocking users   #
     ####################
-
     @staticmethod
     async def is_user_blocked(user, config):
         """Find out if user is blocked"""

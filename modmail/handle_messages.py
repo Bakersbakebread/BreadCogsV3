@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 from . import create
-from .utils import get_label
+from .utils import *
 
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
@@ -54,8 +54,10 @@ async def channel_finder(author, guild):
         if str(author.id) in channel.name:
             return channel
 
+
 async def reply_service(ctx, user):
     ask_for_message = await ctx.send("What is your reply?")
+
     def check(m):
         return user.id == m.author.id
 
@@ -66,7 +68,7 @@ async def reply_service(ctx, user):
     return (message, ask_for_message)
 
 
-async def reply_to_user(ctx, message, user, is_anon):
+async def reply_to_user(ctx, config, message, user, is_anon):
     try:
         await user.send(inline(await get_label("info", "user_modmail_recieved")))
         await user.send(
@@ -76,8 +78,9 @@ async def reply_to_user(ctx, message, user, is_anon):
         )
         embed = await message_embed(message, user, is_anon=False)
         if is_anon:
-            embed.set_footer(text='Mod | Sent Anonymously')
-        await ctx.send( embed = embed )
+            embed.set_footer(text="Mod | Sent Anonymously")
+        await ctx.send(embed=embed)
+        await save_message_to_config(config, user, embed)
     except discord.errors.Forbidden:
         await ctx.send(await get_label("errors", "dm_not_allowed"))
 
@@ -94,10 +97,11 @@ async def message_mods(bot, message, config):
     if user_info["thread_is_open"]:
         open_thread = bot.get_channel(user_info["thread_id"])
         if open_thread:
-            await open_thread.send(
-                embed=await message_embed(message.content, author, is_mod=False, is_anon=False)
+            embed = await message_embed(
+                message.content, author, is_mod=False, is_anon=False
             )
-            await message.add_reaction(discord.Emoji(name="regional_indicator_s"))
+            await open_thread.send(embed=embed)
+            await save_message_to_config(config, author, embed)
             return await message.add_reaction("✅")
 
     user_is_blocked = await modmail.Modmail.is_user_blocked(author, config)
@@ -174,6 +178,6 @@ async def message_mods(bot, message, config):
     async with config.user(author).info() as user_info:
         user_info["thread_id"] = modmail_thread.id
 
-    await modmail_thread.send(
-        embed=await message_embed(message.content, author, is_mod=False, is_anon=False)
-    )
+    embed = await message_embed(message.content, author, is_mod=False, is_anon=False)
+    await modmail_thread.send(embed=embed)
+    await save_message_to_config(config, author, embed)

@@ -1,11 +1,12 @@
 import discord
 import asyncio
+from redbot.core import Config
 
 from redbot.core.utils.chat_formatting import humanize_list
 
 CATEGORY_NAME = "📬 ModMail"
 NEW_THREAD_ICON = "🚩"
-
+CONFIG = Config.get_conf(None, identifier=2807305259608965131, cog_name="ModMail")
 
 async def get_allowed_roles(ctx):
     """Function to search through roles and append to list of matching permission"""
@@ -24,28 +25,31 @@ async def user_info_embed(user):
         title=f"{user.name} - {user.id}", description="""Information about user:"""
     )
     embed.set_thumbnail(url=user.avatar_url)
-    
-    created_at = user.created_at.strftime("%b %d %Y")
-    joined_at = user.joined_at.strftime("%b %d %Y")
 
+    created_at = user.created_at.strftime("%b %d %Y")
+    # joined_at = user.joined_at.strftime("%b %d %Y")
+    async with CONFIG.user(user).info() as user_info:
+        history = len(user_info['archive'])
     embed.add_field(name="Joined Discord", value=created_at)
-    embed.add_field(name="Joined Guild", value=joined_at)
-    embed.add_field(name="User's Roles", 
-                    value = humanize_list([x.name for x in user.roles]),
-                    inline=False)
+    embed.add_field(name="Amount of previous threads", value=history)
+    # embed.add_field(name="User's Roles",
+    #                value = humanize_list([x.name for x in user.roles]),
+    #                inline=False)
 
     return embed
 
 
-async def display_help_embed():
+async def display_help_embed(guild):
     embeds = []
 
     setup = discord.Embed(
         title="ModMail Help", description=("""Description to go here I guess""")
     )
-    setup.add_field(name="👍", value="Help Channel")
-    setup.add_field(name="👍", value="ModMail Log Channel")
-    setup.add_field(name="👎", value="Another SEttings")
+    help_channel = await CONFIG.guild(guild).help_message_id()
+    log_channel_id = await CONFIG.guild(guild).log_channel_id()
+
+    setup.add_field(name="Help Channel", value=help_channel)
+    setup.add_field(name="Log Channel", value=log_channel_id)
 
     settings_active = discord.Embed(title="⚙️ Active ModMail Settings")
 
@@ -102,7 +106,7 @@ async def new_modmail(ctx, config):
     except discord.errors.Forbidden:
         return await ctx.send("Missing permissions to create channels")
 
-    help_embeds = await display_help_embed()
+    help_embeds = await display_help_embed(ctx.guild)
 
     for embed in help_embeds:
         await help_channel.send(embed=embed)

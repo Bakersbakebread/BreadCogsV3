@@ -7,8 +7,8 @@ from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
 
 
-async def yes_or_no(ctx, user):
-    msg = await ctx.send(f"Send message to {user.name}?")
+async def yes_or_no(ctx, message):
+    msg = await ctx.send(message)
     start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
 
     pred = ReactionPredicate.yes_or_no(msg, ctx.author)
@@ -23,3 +23,8 @@ async def get_label(severity, label):
     ) as json_file:
         data = json.load(json_file)
     return data[severity][label]
+
+
+async def save_message_to_config(config, author, embed):
+    async with config.user(author).info() as user_info:
+        user_info["current_thread"].append(embed.to_dict())
