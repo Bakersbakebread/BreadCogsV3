@@ -1,4 +1,4 @@
-![alt text](https://ibb.co/SfT42dS "ModMail")
+![alt text](https://i.ibb.co/KKZpYLn/Untitled.png "ModMail")
 
 # ModMail Cog
 
