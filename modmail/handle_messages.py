@@ -179,4 +179,5 @@ async def message_mods(bot, message, config):
 
     embed = await message_embed(message.content, author, is_mod=False, is_anon=False)
     await modmail_thread.send(embed=embed)
+    await message.add_reaction("✅")
     await save_message_to_config(config, author, embed)
