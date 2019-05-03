@@ -8,6 +8,7 @@ CATEGORY_NAME = "📬 ModMail"
 NEW_THREAD_ICON = "🚩"
 CONFIG = Config.get_conf(None, identifier=2807305259608965131, cog_name="ModMail")
 
+
 async def get_allowed_roles(ctx):
     """Function to search through roles and append to list of matching permission"""
     roles = []
@@ -29,7 +30,7 @@ async def user_info_embed(user):
     created_at = user.created_at.strftime("%b %d %Y")
     # joined_at = user.joined_at.strftime("%b %d %Y")
     async with CONFIG.user(user).info() as user_info:
-        history = len(user_info['archive'])
+        history = len(user_info["archive"])
     embed.add_field(name="Joined Discord", value=created_at)
     embed.add_field(name="Amount of previous threads", value=history)
     # embed.add_field(name="User's Roles",

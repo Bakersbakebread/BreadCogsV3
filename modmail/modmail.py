@@ -86,12 +86,12 @@ class Modmail(commands.Cog):
 
     @commands.command()
     async def reply(self, ctx, *, quick_message=None):
-        # is_thread = await self.is_thread(ctx.guild, ctx.channel)
-        # if not is_thread:
-        #    return await ctx.send("This is not a thread.")
+        is_thread = await self.is_thread(ctx.guild, ctx.channel)
+        if not is_thread:
+            return await ctx.send("This is not a thread.")
 
-        # user_id = ctx.channel.topic.split()[5]
-        user_id = 280730525960896513
+        user_id = ctx.channel.topic.split()[5]
+        # user_id = 280730525960896513
         user = await self.bot.get_user_info(user_id)
 
         if quick_message:
@@ -120,11 +120,11 @@ class Modmail(commands.Cog):
 
     @commands.command()
     async def replyanon(self, ctx, *, quick_message=None):
-        # is_thread = await self.is_thread(ctx.guild, ctx.channel)
-        # if not is_thread:
-        #    return await ctx.send("This is not a thread.")
+        is_thread = await self.is_thread(ctx.guild, ctx.channel)
+        if not is_thread:
+            return await ctx.send("This is not a thread.")
 
-        # user_id = ctx.channel.topic.split()[5]
+        user_id = ctx.channel.topic.split()[5]
         user_id = 280730525960896513
         user = await self.bot.get_user_info(user_id)
         if quick_message:
@@ -172,16 +172,15 @@ class Modmail(commands.Cog):
 
         user_id = ctx.channel.topic.split()[5]
         user = await self.bot.get_user_info(user_id)
-        
-        async with self.config.user(user).info() as user_info:
-            current_thread = {user_info['thread_id'] :user_info['current_thread']}
-            
-            user_info.update(
-                {"thread_is_open": False, 
-                 "thread_id": 0,
-                 "current_thread": []})
 
-            user_info['archive'].append(current_thread)
+        async with self.config.user(user).info() as user_info:
+            current_thread = {user_info["thread_id"]: user_info["current_thread"]}
+
+            user_info.update(
+                {"thread_is_open": False, "thread_id": 0, "current_thread": []}
+            )
+
+            user_info["archive"].append(current_thread)
 
         embed = discord.Embed(
             title=f" ",
@@ -189,9 +188,7 @@ class Modmail(commands.Cog):
             color=discord.Color.red(),
         )
         await loading.edit(embed=embed, content=f" ")
-        approved = await yes_or_no(
-            ctx, message="Would you like to delete the channel?"
-        )
+        approved = await yes_or_no(ctx, message="Would you like to delete the channel?")
         if approved:
             await ctx.send("Delete")
         else:
