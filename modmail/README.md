@@ -2,86 +2,45 @@
 
 ModMail provides guilds with the ability to have their Red accept DM's to be relayed to the Mod team. This cog is best used with an instance that is a member of only one guild. Multi-guild messages is supported, but not advised.
 
-## Getting Started
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
-
 ### Prerequisites
 
-What things you need to install the software and how to install them
+ModMail relys on a few packages, these will need to be installed if not already.
 
+[Tabulate](https://pypi.org/project/tabulate/)
 ```
-Give examples
-```
-
-### Installing
-
-A step by step series of examples that tell you how to get a development env running
-
-Say what the step will be
-
-```
-Give the example
+pip install tabulate
 ```
 
-And repeat
+## Installing
+
+Before loading the repo, ensure that Downloader is loaded.
+
+Then run the command: 
+```
+[p]repo add BreadCogs https://github.com/Bakersbakebread/BreadCogsV3
+```
+You will be prompted with a message that looks like this:
+```
+You're about to add a 3rd party repository. The creator of Red and its community have no responsibility for any potential damage that the content of 3rd party repositories might cause.
+
+By typing 'I agree' you declare that you have read and fully understand the above message. This message won't be shown again until the next reboot.
+
+You have 30 seconds to reply to this message.
+```
+Type `I agree` within 30 seconds.
+
+Now we have the repo added we can install the ModMail cog! To do this type the following:
 
 ```
-until finished
+[p]cog install Bread modmail
 ```
 
-End with an example of getting some data out of the system or using it for a little demo
 
-## Running the tests
+## Getting Started
 
-Explain how to run the automated tests for this system
-
-### Break down into end to end tests
-
-Explain what these tests test and why
-
+In order to send replies and recieve ModMails, we must have a ModMail created. This is easy to do:
 ```
-Give an example
+[p]create
 ```
 
-### And coding style tests
-
-Explain what these tests test and why
-
-```
-Give an example
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
-## Built With
-
-* [Dropwizard](http://www.dropwizard.io/1.0.2/docs/) - The web framework used
-* [Maven](https://maven.apache.org/) - Dependency Management
-* [ROME](https://rometools.github.io/rome/) - Used to generate RSS Feeds
-
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
-## Versioning
-
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/your/project/tags). 
-
-## Authors
-
-* **Billie Thompson** - *Initial work* - [PurpleBooth](https://github.com/PurpleBooth)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
-
-## Acknowledgments
-
-* Hat tip to anyone whose code was used
-* Inspiration
-* etc
+This will create a ModMail category, help channel and log channel.
