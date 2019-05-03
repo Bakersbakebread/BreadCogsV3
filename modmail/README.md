@@ -1,3 +1,5 @@
+![alt text](https://ibb.co/SfT42dS "ModMail")
+
 # ModMail Cog
 
 ModMail provides guilds with the ability to have their Red accept DM's to be relayed to the Mod team. This cog is best used with an instance that is a member of only one guild. Multi-guild messages is supported, but not advised.
