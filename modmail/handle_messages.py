@@ -174,7 +174,6 @@ async def message_mods(bot, message, config):
                 await get_label("errors", "no_perms_create_channel")
             )
 
-    await please_wait_reply(author)
     async with config.user(author).info() as user_info:
         user_info["thread_id"] = modmail_thread.id
 
