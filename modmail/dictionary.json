@@ -1,3 +1,13 @@
 {
-  "help_message": "Thanks for helping!"
+  "info": {
+    "user_modmail_recieved": "You have have recieved a modmail reply:",
+    "guild_react_request": "Please react to the emoji corresponding to the guild you wish to send a message to.",
+    "multiple_guilds_ask": "We have more than one server in common, please choose from list below where you would like to send the message.",
+    "sending_anon": "Sending anonymously"
+  },
+  "errors": {
+    "dm_not_allowed": "I am unable to send a DM to user, this may be because they don't allow DM's from bots.",
+    "you_are_blocked": "You have been blocked from sending ModMails.",
+    "no_perms_create_channel": ":shield: Missing permissions from guild to create channels."
+  }
 }

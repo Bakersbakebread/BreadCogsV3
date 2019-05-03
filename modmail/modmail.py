@@ -81,7 +81,7 @@ class Modmail(commands.Cog):
     # replying to user #
     ####################
     @commands.command()
-    async def reply(self, ctx, is_anon=False):
+    async def reply(self, ctx, *, quick_message=None):
         # is_thread = await self.is_thread(ctx.guild, ctx.channel)
         # if not is_thread:
         #    return await ctx.send("This is not a thread.")
@@ -90,31 +90,64 @@ class Modmail(commands.Cog):
         user_id = 280730525960896513
         user = await self.bot.get_user_info(user_id)
 
-        anon = "`Sending anonymously`" if is_anon else f" "
-        ask_for_message = await ctx.send(f"What is your reply? {anon}")
+        if quick_message:
+            message = quick_message
+        else:
+            service = await reply_service(ctx, user)
+            message = service[0]
 
-        def check(m):
-            return user.id == m.author.id  
-
-        message = await ctx.bot.wait_for("message", check=check)
-
-        await message.delete()
-        embed = discord.Embed(title="Message preview", description=message.content)
-
-        if is_anon:
-            embed.set_footer(text="Sending message anonymously")
+        embed = discord.Embed(
+        title="Message preview", 
+        description=message)
+        
         reply = await ctx.send(embed=embed)
 
         approved = await yes_or_no(ctx, user)
 
         if approved:
-            await reply_to_user(ctx, message, user, is_anon)
+            await reply_to_user(ctx, message, user, is_anon=False)
         else:
             await ctx.send("Ok. Message not sent.", delete_after=30)
 
         await reply.delete()
         await ctx.message.delete()
-        await ask_for_message.delete()
+        if not quick_message:
+            await service[1].delete()
+
+    @commands.command()
+    async def replyanon(self, ctx, *, quick_message=None):
+        # is_thread = await self.is_thread(ctx.guild, ctx.channel)
+        # if not is_thread:
+        #    return await ctx.send("This is not a thread.")
+
+        # user_id = ctx.channel.topic.split()[5]
+        user_id = 280730525960896513
+        user = await self.bot.get_user_info(user_id)
+        if quick_message:
+            message = quick_message
+        else:
+            service = await reply_service(ctx, user)
+            message = service[0]
+
+        embed = discord.Embed(
+        title="Message preview", 
+        description=message)
+        embed.set_footer(text = await get_label('info', 'sending_anon'))
+        
+        reply = await ctx.send(embed=embed)
+
+        approved = await yes_or_no(ctx, user)
+
+
+        if approved:
+            await reply_to_user(ctx, message, user, is_anon=True)
+        else:
+            await ctx.send("Ok. Message not sent.", delete_after=30)
+
+        await reply.delete()
+        await ctx.message.delete()
+        if not quick_message:
+            await service[1].delete()
 
     #####################
     # blocking users   #

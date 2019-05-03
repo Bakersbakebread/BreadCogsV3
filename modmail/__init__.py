@@ -5,6 +5,7 @@ import json
 
 # Throwback
 def check_files():
+    print("checking files")
     if not os.path.exists(
         os.path.join(cog_data_path(raw_name="ModMail"), "dictionary.json")
     ):

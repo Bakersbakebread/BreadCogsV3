@@ -1,8 +1,10 @@
 import discord
 import asyncio
 
+from redbot.core.utils.chat_formatting import humanize_list
+
 CATEGORY_NAME = "📬 ModMail"
-NEW_THREAD_ICON = "🔴"
+NEW_THREAD_ICON = "🚩"
 
 
 async def get_allowed_roles(ctx):
@@ -19,9 +21,18 @@ async def get_allowed_roles(ctx):
 
 async def user_info_embed(user):
     embed = discord.Embed(
-        title=f"👤 {user.name} - {user.id}", description="""Information about user:"""
+        title=f"{user.name} - {user.id}", description="""Information about user:"""
     )
     embed.set_thumbnail(url=user.avatar_url)
+    
+    created_at = user.created_at.strftime("%b %d %Y")
+    joined_at = user.joined_at.strftime("%b %d %Y")
+
+    embed.add_field(name="Joined Discord", value=created_at)
+    embed.add_field(name="Joined Guild", value=joined_at)
+    embed.add_field(name="User's Roles", 
+                    value = humanize_list([x.name for x in user.roles]),
+                    inline=False)
 
     return embed
 
@@ -55,13 +66,6 @@ async def display_help_embed():
 async def format_channel_topic(user):
     topic = f"**User** : {user.name}#{user.discriminator}\n"
     topic += f"**ID** : {user.id}\n\n"
-
-    # created_at = user.created_at.strftime("%b %d %Y")
-    # joined_at = user.joined_at.strftime("%b %d %Y")
-
-    # topic += f"**Created** : {created_at}\n"
-    # topic += f"**Joined** : {joined_at}\n"
-
     return topic
 
 

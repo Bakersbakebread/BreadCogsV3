@@ -3,6 +3,9 @@ import json
 import os
 from datetime import datetime
 
+from . import create
+from .utils import get_label
+
 from redbot.core import Config, checks, commands
 from redbot.core.bot import Red
 
@@ -10,23 +13,19 @@ from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
 from redbot.core.data_manager import cog_data_path
 
-from . import create
+from redbot.core.utils.chat_formatting import inline
+
 
 from modmail import modmail
 from tabulate import tabulate
-
-
-with open(
-    os.path.join(cog_data_path(raw_name="ModMail"), "dictionary.json")
-) as json_file:
-    label = json.load(json_file)
 
 
 async def please_wait_reply(author):
     # message = "Your message has been recieved.  Someone will reply as soon as
     # possible."
 
-    message = label.get("help_message", "Thanks for helping")
+    message = await get_label("info", "guild_react_request")
+    # message = label.get("help_message", "Thanks for helping")
     await author.send(message)
 
 
@@ -35,7 +34,7 @@ async def message_embed(message, author, is_mod=True, is_anon=True, is_not_reply
     # TODO: Make colors custom
     color = discord.Color.green() if is_mod else discord.Color.orange()
 
-    embed = discord.Embed(description=(f"{message.content}"), color=color)
+    embed = discord.Embed(description=(f"{message}"), color=color)
 
     embed.set_author(
         name=(f" " if is_anon else f"{author.name}"), icon_url=f"{author.avatar_url}"
@@ -55,18 +54,32 @@ async def channel_finder(author, guild):
         if str(author.id) in channel.name:
             return channel
 
+async def reply_service(ctx, user):
+    ask_for_message = await ctx.send("What is your reply?")
+    def check(m):
+        return user.id == m.author.id
+
+    message_obj = await ctx.bot.wait_for("message", check=check)
+    message = message_obj.content
+    await message_obj.delete()
+
+    return (message, ask_for_message)
+
 
 async def reply_to_user(ctx, message, user, is_anon):
     try:
-        await user.send(f"`{label['handle_messages']['user_modmail_recieved']}`")
+        await user.send(inline(await get_label("info", "user_modmail_recieved")))
         await user.send(
             embed=await message_embed(
                 message, ctx.author, is_anon=is_anon, is_not_reply=False
             )
         )
-        await ctx.send(embed=await message_embed(message, user, is_anon=False))
+        embed = await message_embed(message, user, is_anon=False)
+        if is_anon:
+            embed.set_footer(text='Mod | Sent Anonymously')
+        await ctx.send( embed = embed )
     except discord.errors.Forbidden:
-        await ctx.send(f"{label['errors']['dm_not_allowed']}")
+        await ctx.send(await get_label("errors", "dm_not_allowed"))
 
 
 async def message_mods(bot, message, config):
@@ -74,21 +87,23 @@ async def message_mods(bot, message, config):
     user_info = await config.user(author).info()
 
     if user_info["multi_guild_hold"]:
-        await author.send(f"{label['handle_messages']['guild_react_request']}")
+        await author.send(await get_label("info", "guild_react_request"))
+        # await author.send(f"{label['handle_messages']['guild_react_request']}")
         return
 
     if user_info["thread_is_open"]:
         open_thread = bot.get_channel(user_info["thread_id"])
         if open_thread:
             await open_thread.send(
-                embed=await message_embed(message, author, is_mod=False, is_anon=False)
+                embed=await message_embed(message.content, author, is_mod=False, is_anon=False)
             )
+            await message.add_reaction(discord.Emoji(name="regional_indicator_s"))
             return await message.add_reaction("✅")
 
     user_is_blocked = await modmail.Modmail.is_user_blocked(author, config)
     if user_is_blocked:
         print(f"[ModMail] Blocked user attempted to message : {author.name}")
-        return await author.send(f"{label['errors']['user_is_blocked']}")
+        return await author.send(await get_label("errors", "you_are_blocked"))
 
     # # channel_name = discord.utils.get(self.bot.guilds,
     # id=556800157082058784)
@@ -104,9 +119,8 @@ async def message_mods(bot, message, config):
 
         table = [[index, guild.name] for index, guild in enumerate(guilds)]
 
-        await author.send(
-            "We have more than one server in common, please choose from list below where you would like to send the message."
-        )
+        await author.send(await get_label("info", "multiple_guilds_ask"))
+
         msg = await author.send(f"```{tabulate(table, tablefmt='presto')}```")
 
         emojis = ReactionPredicate.NUMBER_EMOJIS[: len(guilds)]
@@ -129,14 +143,18 @@ async def message_mods(bot, message, config):
         now = datetime.now()
         try:
             print(f"[ModMail] Attempting to find {author.name} message frequncy")
+
             user_info["counter"] += 1
             user_info["last_messaged"] = datetime.timestamp(now)
             user_info["thread_is_open"] = True
             user_info["guild_id"] = guild.id
             user_info["multi_guild_hold"] = False
+
             print(f"[ModMail] {author.name} message frequency: {user_info['counter']}")
+
         except KeyError:
             print("[ModMail] User not found, created a new entry")
+
             user_info["counter"] = 1
             user_info["last_messaged"] = datetime.timestamp(now)
             user_info["thread_is_open"] = True
@@ -148,12 +166,14 @@ async def message_mods(bot, message, config):
         # returns False if no permissions to create thread
         modmail_thread = await create.new_modmail_thread(bot, guild, author)
         if not modmail_thread:
-            return await author.send(":shield: Missing permissions from that guild.")
+            return await author.send(
+                await get_label("errors", "no_perms_create_channel")
+            )
 
     await please_wait_reply(author)
     async with config.user(author).info() as user_info:
         user_info["thread_id"] = modmail_thread.id
 
     await modmail_thread.send(
-        embed=await message_embed(message, author, is_mod=False, is_anon=False)
+        embed=await message_embed(message.content, author, is_mod=False, is_anon=False)
     )
