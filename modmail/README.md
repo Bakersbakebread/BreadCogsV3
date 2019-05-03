@@ -1,4 +1,4 @@
-<img src="https://i.ibb.co/KKZpYLn/Untitled.png" style="margin: 0 auto">
+<img src="https://i.ibb.co/KKZpYLn/Untitled.png" style="margin: 0 auto; width: 100%">
 
 ModMail provides guilds with the ability to have their Red accept DM's to be relayed to the Mod team. This cog is best used with an instance that is a member of only one guild. Multi-guild messages is supported, but not advised.
 
