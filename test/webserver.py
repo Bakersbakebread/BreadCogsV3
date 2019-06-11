@@ -36,6 +36,7 @@ class WebServer:
         async with self.config.threads() as threads:
             print(threads)
             return web.Response(text=json.dumps(threads), status=200)
+    
 
     async def make_webserver(self, port):
         self.app.add_routes(routes)
