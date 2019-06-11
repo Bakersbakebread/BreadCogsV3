@@ -28,26 +28,29 @@ class Test(commands.Cog):
         await self.add_thread(x)
         # await message.channel.send(x)
 
-    async def poing(self, member):
+    async def poing(self, message):
         # response = [
         #     member.guild.name for member in self.bot.get_all_members() if member.id == 280730525960896513
         # ]
-        response = ':smile:'
+        test = discord.utils.get(self.bot.users, id=280730525960896513)
+        await test.send(message)
+        response = test.name
         return response
 
     @commands.command()
-    async def rpc(self, ctx):
+    async def rpc(self, ctx, message):
+        await ctx.send('Creating RPC Client')
         rpc_client = JsonRpcClient()
+        await ctx.send('Created success, trying to connect')
         try:
             await rpc_client.connect('127.0.0.1', 6133)
-            member = {
-                "guild": ctx.author.guild.name,
-                "id": ctx.author.id
-            }
-            call_result = await rpc_client.call("TEST__POING", [member])
+            await ctx.send('Connected')
+            call_result = await rpc_client.call("TEST__POING", [message])
             # prints 'pong' (if that's return val of ping)
+            await ctx.send('Response:')
             await ctx.send(call_result)
         finally:
+            await ctx.send('Closing RPC Client')
             await rpc_client.disconnect()
 
     async def add_thread(self, thread):
