@@ -1,24 +1,23 @@
 import discord
-from discord.ext import commands
+from redbot.core import Config, commands
 
-import datetime
-import functools
-
-from redbot.core import Config, checks, commands
-from redbot.core.bot import Red
-
+from .create_service import MailThread, MailCategory
+from .message_service import UserToModMessage
 from .utils import *
 
-from .create import thread, base
-from .messages import message_mods
+
+# from .create import thread, base
+# from .create.thread import MailThread
 
 
 class Modmail(commands.Cog):
 	def __init__(self, bot):
 		self.bot = bot
-		self.config = Config.get_conf(self, identifier=2807305259608965131)
+		self.config = Config.get_conf(self, identifier=2807305259608965131, force_registration=True)
 
-		default_global = {"blocked": []}
+		default_global = {
+			"blocked": []
+		}
 		self.config.register_global(**default_global)
 
 		default_guild = {
@@ -48,7 +47,9 @@ class Modmail(commands.Cog):
 		if message.author == self.bot.user:
 			return
 		if isinstance(message.channel, discord.abc.PrivateChannel):
-			await message_mods.message(self.bot, message, self.config)
+			x = UserToModMessage(self.bot, message)
+			await x.send_modmail_message()
+			# await message_mods.message(self.bot, message, self.config)
 
 	async def is_thread(self, guild, channel_to_check):
 		config_category_id = await self.config.guild(guild).category_id()
@@ -63,7 +64,9 @@ class Modmail(commands.Cog):
 	async def create(self, ctx):
 		"""Setup a new ModMail"""
 		loading = await ctx.send("⏳ Creating new ModMail...")
-		await base.new_modmail(ctx, self.config)
+		new_modmail = MailCategory(self.bot, ctx)
+		await new_modmail.make_new_modmail()
+
 		await loading.edit(content="👍 ModMail Created")
 
 	@commands.command()
@@ -71,6 +74,15 @@ class Modmail(commands.Cog):
 		for x in ctx.guild.channels:
 			if x.name != "test":
 				await x.delete()
+
+	@commands.command()
+	async def test1(self, ctx, user:discord.Member):
+		new_thread = MailThread(self.bot, user, ctx.guild)
+		await ctx.send('trying to run')
+		await new_thread.send_to_channel(ctx.channel)
+
+		await new_thread.make_new_channel()
+		await ctx.send('ran')
 
 	####################
 	# replying to user #

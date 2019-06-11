@@ -4,9 +4,10 @@ from redbot.core import Config
 
 from redbot.core.utils.chat_formatting import humanize_list
 
-
-CONFIG = Config.get_conf(None, identifier=2807305259608965131, cog_name="ModMail")
-
+CATEGORY_NAME = "📬 ModMail"
+CONFIG = Config.get_conf(
+    None, identifier=2807305259608965131, cog_name="ModMail")
+NEW_THREAD_ICON = "📬"
 
 async def user_info_embed(user):
     embed = discord.Embed(
@@ -26,34 +27,46 @@ async def user_info_embed(user):
 
     return embed
 
+
 async def format_channel_topic(user):
     topic = f"**User** : {user.name}#{user.discriminator}\n"
     topic += f"**ID** : {user.id}\n\n"
     return topic
 
-async def new_modmail_thread(bot, guild, user):
-    thread_name: str = f"{NEW_THREAD_ICON}-{user.name}-{user.id}"
 
-    category = discord.utils.get(guild.categories, name=CATEGORY_NAME)
+class MailThread:
+    def __init__(self, bot, user, guild):
+            self.user = user
+            self.guild = guild
+            self.config = Config.get_conf(None, identifier=2807305259608965131, cog_name="ModMail")
 
-    try:
-        new_thread = await guild.create_text_channel(
-            name=thread_name,
-            category=category,
-            topic=await format_channel_topic(user),
-            reason=f"New ModMail Thread for {user.name}",
-        )
-    except discord.errors.Forbidden as e:
-        print(f"[ModMail] {e} - could not create channel.")
-        return False
+            self.thread_name = f"{NEW_THREAD_ICON}-{self.user.name}-{self.user.id}"
 
-    if not category:
-        # TODO: Move into DM owner?
-        category_error = "Could not assign channel to ModMail Category."
-        owner = await bot.get_user_info(bot.owner_id)
-        await owner.send(category_error)
-        await new_thread.send(category_error)
+    async def make_new_channel(self):
+        category = discord.utils.get(self.guild.categories, name=CATEGORY_NAME)
+        try:
+            new_thread = await self.guild.create_text_channel(
+                name=self.thread_name,
+                category=category,
+                topic=await format_channel_topic(self.user),
+                reason=f"New ModMail Thread for {self.user.name}",
+            )
 
-    await new_thread.send(embed=await user_info_embed(user))
+        except discord.errors.Forbidden as e:
+            print(f"[ModMail] {e} - could not create channel.")
+            return False
 
-    return new_thread
+        if not category:
+            # TODO: Move into DM owner?
+            category_error = "Could not assign channel to ModMail Category."
+            owner = await self.bot.get_user_info(self.bot.owner_id)
+            
+            await owner.send(category_error)
+            await new_thread.send(category_error)
+
+        await new_thread.send(embed=await user_info_embed(self.user))
+
+        return new_thread
+
+
+

@@ -4,6 +4,7 @@ from redbot.core import Config
 CATEGORY_NAME = "📬 ModMail"
 CONFIG = Config.get_conf(None, identifier=2807305259608965131, cog_name="ModMail")
 
+
 async def get_allowed_roles(ctx) -> list:
 	"""Function to search through roles and append to list of matching permission"""
 	roles = []

@@ -1,6 +1,6 @@
 ﻿import discord
 
-import ..modmail
+import modmail
 
 
 async def message(bot, message, config):
