@@ -1,16 +1,16 @@
 <template>
   <div id="app">
-    <form class="" method="post" @submit.prevent="sendThis">
- <input type="text" name="" value="" v-model="message">
- <button type="submit" name="button">Submit</button>
- </form>
- {{ message }}
-    <!-- <router-view/> -->
+    <navBar/>
+    <!-- {{ message }} -->
+    <div class="container">
+    <router-view class="mt-2"/>
+    </div>
   </div>
 </template>
 
 <script>
 import axios from "axios";
+import NavBar from "@/components/layout/NavBar"
 
 export default {
   name: "App",
@@ -19,12 +19,26 @@ export default {
       message: ""
     };
   },
+  components:{
+    NavBar
+  },
   methods: {
-    sendThis() {
-      axios
-        .post("http://localhost:42356/", this.message)
-        .then(response => (this.test = response.data))
-        .catch(error => console.log(error));
+    sendThis() {}
+  },
+  mounted() {
+    axios
+      .post("http://localhost:42356/")
+      .then(response => (this.message = JSON.parse(response.data)))
+      .catch(error => console.log(error));
+  },
+  computed: {
+    byUser() {
+      return this.message.reduce((acc, message) => {
+        (acc[message.author.name] = acc[message.author.name] || []).push(
+          message.content
+        );
+        return acc;
+      }, {});
     }
   }
 };
@@ -35,14 +49,6 @@ export default {
   font-family: "Avenir", Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-  margin-top: 60px;
-}
-.card {
-  max-width: 400px;
-  margin: 10px auto;
-  padding: 10px;
-  border: solid 1px green;
+  margin: 0 auto;
 }
 </style>
