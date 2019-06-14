@@ -1,54 +1,60 @@
 <template>
-  <div id="app">
-    <navBar/>
-    <!-- {{ message }} -->
-    <div class="container">
-    <router-view class="mt-2"/>
-    </div>
+  <div :class="{'nav-open': $sidebar.showSidebar}">
+    <notifications></notifications>
+    <router-view></router-view>
   </div>
 </template>
 
 <script>
-import axios from "axios";
-import NavBar from "@/components/layout/NavBar"
-
+import NotificationTemplate from '@/pages/Notifications/NotificationTemplate';
 export default {
-  name: "App",
-  data() {
-    return {
-      message: ""
-    };
-  },
   components:{
-    NavBar
+    NotificationTemplate
   },
-  methods: {
-    sendThis() {}
-  },
-  mounted() {
-    axios
-      .post("http://localhost:42356/")
-      .then(response => (this.message = JSON.parse(response.data)))
-      .catch(error => console.log(error));
-  },
-  computed: {
-    byUser() {
-      return this.message.reduce((acc, message) => {
-        (acc[message.author.name] = acc[message.author.name] || []).push(
-          message.content
-        );
-        return acc;
-      }, {});
+    mounted() {
+      this.notifyVue('center', 'top');
+    },
+    methods:{
+    notifyVue(verticalAlign, horizontalAlign) {
+      const color = Math.floor(Math.random() * 4 + 1);
+      this.$notify({
+        component: NotificationTemplate,
+        icon: "ti-support",
+        horizontalAlign: horizontalAlign,
+        verticalAlign: verticalAlign,
+        type: "warning"
+      });
     }
   }
 };
 </script>
 
-<style>
-#app {
-  font-family: "Avenir", Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  margin: 0 auto;
+<style lang="scss">
+.vue-notifyjs.notifications {
+  .alert {
+    z-index: 10000;
+  }
+  .list-move {
+    transition: transform 0.3s, opacity 0.4s;
+  }
+  .list-item {
+    display: inline-block;
+    margin-right: 10px;
+  }
+  .list-enter-active {
+    transition: transform 0.2s ease-in, opacity 0.4s ease-in;
+  }
+  .list-leave-active {
+    transition: transform 1s ease-out, opacity 0.4s ease-out;
+  }
+
+  .list-enter {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+  .list-leave-to {
+    opacity: 0;
+    transform: scale(1.2, 0.7);
+  }
 }
 </style>

@@ -25,7 +25,7 @@ class ModMailRpc:
         response.append({
                 "guild": {
                     'name': guild.name,
-                    'id':guild.id,
+                    'id': guild.id,
                     'icon': guild.icon_url._url,
                     'member_count': guild.member_count
                 },

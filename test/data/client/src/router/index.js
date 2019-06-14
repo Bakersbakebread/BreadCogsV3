@@ -1,23 +1,12 @@
-import Vue from 'vue'
-import Router from 'vue-router'
-import HelloWorld from '@/pages/HelloWorld'
-import GuildSettings from '@/pages/GuildSettings'
+import Vue from "vue";
+import VueRouter from "vue-router";
+import routes from "./routes";
+Vue.use(VueRouter);
 
-Vue.use(Router)
+// configure router
+const router = new VueRouter({
+  routes, // short for routes: routes
+  linkActiveClass: "active"
+});
 
-export default new Router({
-  // linkActiveClass: "active",
-  linkExactActiveClass: "active",
-  routes: [
-    {
-      path: '/',
-      name: 'HelloWorld',
-      component: HelloWorld
-    },
-    {
-      path: '/guild-settings',
-      name : 'GuildSettings',
-      component : GuildSettings
-    }
-  ]
-})
+export default router;
