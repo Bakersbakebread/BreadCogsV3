@@ -1,11 +1,6 @@
-import os
-import json
-
-from redbot.core.data_manager import cog_data_path
-
+import discord
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
-
 
 async def yes_or_no(ctx, message):
     msg = await ctx.send(message)
@@ -16,15 +11,34 @@ async def yes_or_no(ctx, message):
     await msg.delete()
     return pred.result
 
+async def modmail_message_to_json(message: discord.Message, alert) -> dict:
+    author = message.author
+    json_author = {
+        "id": author.id,
+        "name": author.name,
+        "discriminator": author.discriminator,
+        "avatar": str(author.avatar_url),
+        "created_at": author.created_at.isoformat(),
+    }
+    json_message = {
+        "id": message.id,
+        "author": json_author,
+        "attachments": [
+            message.attachments.url for message.attachments in message.attachments
+        ],
+        "content": message.content,
+    }
+    final_json = {
+        "id": message.id,
+        "alert_message_id": alert.id,
+        "status":"new",
+        "assigned":False,
+        "mod_assigned":None,
+        "created_at": message.created_at.isoformat(),
+        "thread":json_message
+    }
+    return final_json
 
-async def get_label(severity, label):
-    with open(
-        os.path.join(cog_data_path(raw_name="ModMail"), "dictionary.json")
-    ) as json_file:
-        data = json.load(json_file)
-    return data[severity][label]
-
-
-async def save_message_to_config(config, author, embed):
-    async with config.user(author).info() as user_info:
-        user_info["current_thread"].append(embed.to_dict())
+async def multi_guild_finder(all_members, author:discord.User):
+    shared_guilds = [member.guild for member in all_members if member.id == author.id]
+    return shared_guilds
