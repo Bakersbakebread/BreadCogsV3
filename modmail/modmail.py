@@ -35,7 +35,8 @@ class Modmail(commands.Cog):
         self.config.register_global(enforced_guild=None)
 
         self.config.register_guild(
-            threads=[], modmail_alerts=True, modmail_alerts_channel=None
+            threads=[], modmail_alerts=True, modmail_alerts_channel=None,
+            snippets=[]
         )
         default_user = {
             "last_messaged": None,
@@ -194,36 +195,6 @@ class Modmail(commands.Cog):
             await rpc_client.disconnect()
 
     @commands.group()
-    async def t(self, ctx):
-        response = []
-        all_guilds = await self.config.all_guilds()
-
-        for key, value in all_guilds.items():
-            channel: discord.TextChannel = self.bot.get_channel(
-                value["modmail_alerts_channel"]
-            )
-            guild: discord.Guild = self.bot.get_guild(key)
-            response.append(
-                {
-                    key: {
-                        "guild": {
-                            "name": guild.name,
-                            "icon": guild.icon_url._url,
-                            "member_count": guild.member_count,
-                        },
-                        "alerts_channel": {
-                            "id": channel.id if channel is not None else None,
-                            "name": channel.name if channel is not None else None,
-                        },
-                        "alerts_active": value["modmail_alerts"],
-                        "thread_count": len(value["threads"]),
-                    }
-                }
-            )
-        for x in response:
-            await ctx.send(x)
-
-    @commands.group()
     async def modmail(self, ctx):
         pass
 
@@ -287,7 +258,8 @@ class Modmail(commands.Cog):
     @_set.group(name="enforce", autohelp=False)
     async def _toggle_enforced_guild(self, ctx):
         if await self.config.enforced_guild() is None:
-            return await ctx.send('Not enforcing one guild.')
+            return await ctx.send(
+                f':shield: Not enforcing one guild, you can set this using `{ctx.prefix}modmail set guild`')
 
         unforce_guild = await ModMailSettings(self.bot, ctx, self.config).set_enforced_guild(None)
         await ctx.send(f':mailbox_with_mail: Disabled single guild enforcement.')
@@ -299,6 +271,29 @@ class Modmail(commands.Cog):
             await ctx.send(f":mailbox_with_mail::bell: ModMail alerts `enabled` ")
         else:
             await ctx.send(f":mailbox_with_mail::no_bell: ModMail alerts `disabled`")
+
+    #
+    # SETTINGS / SNIPPETS
+    #
+    @modmail.group(name="snippet")
+    async def _snippet(self, ctx):
+        pass
+
+    @_snippet.command(name="list")
+    async def _list_all_snippets(self, ctx, guild=None):
+        if guild is None:
+            guild = ctx.guild
+
+        all_snippets = await ModMailSettings(self.bot, ctx, self.config).get_guild_snippets(guild)
+
+        await ctx.send(f"Hey bread, all snippets for `{guild}`: ```{all_snippets}```")
+
+    @_snippet.command(name="add")
+    async def _add_new_snippet(self, ctx, code, *, snippet):
+        guild = ctx.guild
+        add_snippet = await ModMailSettings(self.bot, ctx, self.config).add_new_snippet(guild, code, snippet)
+
+        await ctx.send(f"Hey bread, I added `{snippet}` to `{guild}`. ")
 
     #
     # BLOCKING

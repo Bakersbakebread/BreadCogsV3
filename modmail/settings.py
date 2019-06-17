@@ -1,12 +1,29 @@
 import discord
 from .exceptions import AlertsChannelExists
-
+from datetime import datetime
 
 class ModMailSettings:
     def __init__(self, bot: discord.Client, context, config):
         self.bot = bot
         self.ctx = context
         self.config = config
+
+    async def get_guild_snippets(self, guild: discord.TextChannel):
+        all_snippets = await self.config.guild(guild).snippets()
+        return all_snippets
+
+    async def add_new_snippet(self, guild, code, snippet):
+        guild_group = self.config.guild(guild)
+
+        snippet_dict = {
+            "author": self.ctx.author.id,
+            "created_at": self.ctx.message.created_at.strftime("%m/%d/%Y, %H:%M"),
+            "content": snippet,
+            "code": code
+        }
+
+        async with guild_group.snippets() as snippets:
+            snippets.append(snippet_dict)
 
     async def set_channel(self, channel: discord.TextChannel) -> tuple:
         guild = self.ctx.guild
