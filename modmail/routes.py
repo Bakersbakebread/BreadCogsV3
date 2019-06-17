@@ -6,7 +6,7 @@ from redbot.core import Config
 from aiohttp_json_rpc import JsonRpcClient
 import logging
 
-log = logging.getLogger('red.breadcogs.modmail.rpc')
+log = logging.getLogger("red.breadcogs.modmail.rpc")
 
 config = Config.get_conf(None, identifier=13289648, cog_name="Test")
 
@@ -25,6 +25,7 @@ async def rpc_call(method, params):
         await rpc_client.disconnect()
         return call_result
 
+
 @routes.post("/bot/sys-settings")
 async def _sys_settings(request):
     """
@@ -33,6 +34,7 @@ async def _sys_settings(request):
     """
     response = await rpc_call("MODMAILRPC__GET_BOT_SYS_STATS", [])
     return web.Response(text=json.dumps(response), status=200)
+
 
 @routes.post("/guilds/settings")
 async def _guild_settings(request):
@@ -43,6 +45,7 @@ async def _guild_settings(request):
     response = await rpc_call("MODMAILRPC__GET_GUILDS_SETTINGS", [])
     return web.Response(text=json.dumps(response), status=200)
 
+
 @routes.post("/guilds/all-messages")
 async def _get_all_messages(request):
     """
@@ -50,6 +53,7 @@ async def _get_all_messages(request):
     """
     response = await rpc_call("MODMAILRPC__GET_ALL_MESSAGES", [])
     return web.Response(text=json.dumps(response), status=200)
+
 
 @routes.post("/members/get-all-short")
 async def _all_members_short(request):
@@ -59,6 +63,7 @@ async def _all_members_short(request):
     """
     response = await rpc_call("MODMAILRPC__GET_ALL_MEMBERS", [])
     return web.Response(text=json.dumps(response), status=200)
+
 
 @routes.get("/test")
 async def _test(request):

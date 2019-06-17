@@ -13,7 +13,9 @@ from aiohttp_session import setup, get_session, session_middleware
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
 from .routes import routes
-log = logging.getLogger('red.breadcogs.modmail.webserver')
+
+log = logging.getLogger("red.breadcogs.modmail.webserver")
+
 
 class WebServer:
     def __init__(self, bot, cog, config):
@@ -35,15 +37,15 @@ class WebServer:
 
     async def make_webserver(self, port):
         self.app.add_routes(routes)
-        cors = aiohttp_cors.setup(self.app, defaults={
-            "*": aiohttp_cors.ResourceOptions(
-                allow_credentials=True,
-                expose_headers="*",
-                allow_headers="*",
-            )
-        })
-        self.app.router.add_static(
-            "/", str(self.path) + "/client/dist", name="static")
+        cors = aiohttp_cors.setup(
+            self.app,
+            defaults={
+                "*": aiohttp_cors.ResourceOptions(
+                    allow_credentials=True, expose_headers="*", allow_headers="*"
+                )
+            },
+        )
+        self.app.router.add_static("/", str(self.path) + "/client/dist", name="static")
         for route in list(self.app.router.routes()):
             cors.add(route)
         aiohttp_jinja2.setup(

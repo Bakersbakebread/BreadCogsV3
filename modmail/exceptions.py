@@ -1,11 +1,14 @@
 class UserIsBlocked(Exception):
-  pass
+    pass
+
 
 class UserIsWaitingForReply(Exception):
-  pass
+    pass
+
 
 class UserNotChosenGuild(Exception):
-  pass
+    pass
+
 
 class AlertsChannelExists(Exception):
-  pass
+    pass

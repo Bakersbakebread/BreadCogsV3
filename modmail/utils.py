@@ -2,6 +2,7 @@ import discord
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.menus import start_adding_reactions
 
+
 async def yes_or_no(ctx, message):
     msg = await ctx.send(message)
     start_adding_reactions(msg, ReactionPredicate.YES_OR_NO_EMOJIS)
@@ -10,6 +11,7 @@ async def yes_or_no(ctx, message):
     await ctx.bot.wait_for("reaction_add", check=pred)
     await msg.delete()
     return pred.result
+
 
 async def modmail_message_to_json(message: discord.Message, alert) -> dict:
     author = message.author
@@ -31,14 +33,15 @@ async def modmail_message_to_json(message: discord.Message, alert) -> dict:
     final_json = {
         "id": message.id,
         "alert_message_id": alert.id,
-        "status":"new",
-        "assigned":False,
-        "mod_assigned":None,
+        "status": "new",
+        "assigned": False,
+        "mod_assigned": None,
         "created_at": message.created_at.isoformat(),
-        "thread":json_message
+        "thread": json_message,
     }
     return final_json
 
-async def multi_guild_finder(all_members, author:discord.User):
+
+async def multi_guild_finder(all_members, author: discord.User):
     shared_guilds = [member.guild for member in all_members if member.id == author.id]
     return shared_guilds

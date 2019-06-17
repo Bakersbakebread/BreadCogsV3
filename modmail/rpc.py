@@ -1,9 +1,9 @@
 import discord
 import json
-import psutil
 import redbot.core
 from datetime import datetime
 from redbot.core.utils.chat_formatting import humanize_timedelta
+import psutil
 
 
 class ModMailRpc:
@@ -17,7 +17,7 @@ class ModMailRpc:
         return bot_uptime
 
     async def poing(self):
-        response = {'test': 'success'}
+        response = {"test": "success"}
         return json.dumps(response)
 
     async def get_bot_sys_stats(self):
@@ -29,7 +29,7 @@ class ModMailRpc:
             "cog_count": len(self.bot.commands),
             "uptime": self.get_uptime(),
             "red_version": redbot.core.__version__,
-            "dpy_version": discord.__version__
+            "dpy_version": discord.__version__,
         }
         return json.dumps(response)
 
@@ -49,7 +49,7 @@ class ModMailRpc:
                 y = {
                     "name": role.name,
                     "id": role.id,
-                    "color": f"rgb({role.color.r}, {role.color.g}, {role.color.b})"
+                    "color": f"rgb({role.color.r}, {role.color.g}, {role.color.b})",
                 }
                 roles.append(y)
             created_at = x.created_at.strftime("%m/%d/%Y, %H:%M")
@@ -65,11 +65,8 @@ class ModMailRpc:
                     "avatar": str(x.avatar_url),
                     "created_at": created_at,
                     "joined_at": joined_at,
-                    "guild": {
-                        "name": x.guild.name,
-                        "id": x.guild.id,
-                    },
-                    "roles": roles
+                    "guild": {"name": x.guild.name, "id": x.guild.id},
+                    "roles": roles,
                 }
             }
             response.append(y)
@@ -80,24 +77,24 @@ class ModMailRpc:
         all_guilds = await self.config.all_guilds()
         for key, value in all_guilds.items():
             channel: discord.TextChannel = self.bot.get_channel(
-                value['modmail_alerts_channel'])
+                value["modmail_alerts_channel"]
+            )
             guild: discord.Guild = self.bot.get_guild(key)
             print(guild.id)
-            response.append({
-                "guild": {
-                    'name': guild.name,
-                    'id': str(guild.id),
-                    'icon': guild.icon_url._url,
-                    'member_count': str(guild.member_count)
-                },
-                "alerts_channel": {
-                    'id': str(channel.id) if channel is not None else None,
-                    'name': channel.name if channel is not None else None
-                },
-                "alerts_active": value['modmail_alerts'],
-                "thread_count": len(value['threads'])
-            }
+            response.append(
+                {
+                    "guild": {
+                        "name": guild.name,
+                        "id": str(guild.id),
+                        "icon": guild.icon_url._url,
+                        "member_count": str(guild.member_count),
+                    },
+                    "alerts_channel": {
+                        "id": str(channel.id) if channel is not None else None,
+                        "name": channel.name if channel is not None else None,
+                    },
+                    "alerts_active": value["modmail_alerts"],
+                    "thread_count": len(value["threads"]),
+                }
             )
-        for x in response:
-            print(x['guild']['id'])
         return json.dumps(response)
