@@ -80,7 +80,6 @@ class ModMailRpc:
                 value["modmail_alerts_channel"]
             )
             guild: discord.Guild = self.bot.get_guild(key)
-            print(guild.id)
             response.append(
                 {
                     "guild": {
