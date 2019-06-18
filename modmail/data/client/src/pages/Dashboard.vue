@@ -131,7 +131,7 @@ export default {
     //console.log(this.$store)
     this.$store.dispatch("loadAllGuildSettings");
     this.$store.dispatch("loadAllMembersShort"); 
-    this.$store.dispatch("setLoading", true); 
+    
   },
   computed: {
     guildSettings: function() {

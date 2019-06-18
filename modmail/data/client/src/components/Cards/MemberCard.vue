@@ -5,7 +5,10 @@
         :style="{ borderLeft : 'solid 4px rgb(' + getRGBValues(x.member.color) + ')'}"
       >
         <div>
-          <img class="img-thumbnail" :src="x.member.avatar" style="width:100px">
+          <v-lazy-image class="img-thumbnail" 
+          :src="x.member.avatar" 
+          src-placeholder="https://cdn.discordapp.com/embed/avatars/0.png"
+          style="width:100px"/>
           <h3 class="title mt-1 mb-0 pb-0">{{x.member.name}}#{{x.member.discriminator}}</h3>
           <div class="row">
             <div class="col">
@@ -48,8 +51,13 @@
 </template>
 
 <script>
+import VLazyImage from "v-lazy-image";
+
 export default {
   name: "MemberCard",
+  components:{
+    VLazyImage
+  },
   props: ['x'],
   methods:{
         getRGBValues(str) {
@@ -63,4 +71,11 @@ export default {
 </script>
 
 <style>
+.v-lazy-image {
+  filter: blur(10px);
+  transition: filter 0.5s;
+}
+.v-lazy-image-loaded {
+  filter: blur(0);
+}
 </style>

@@ -27,14 +27,14 @@ export default {
 $bg-nude: #f4f3ef !default;
 
 .moving-arrow {
-  border-right: 17px solid $bg-nude;
-  border-top: 17px solid transparent;
-  border-bottom: 17px solid transparent;
+  border-right: 30px solid $bg-nude;
+  border-top: 30px solid transparent;
+  border-bottom: 30px solid transparent;
   display: inline-block;
   position: absolute;
-  left: 243px;
-  top: 95px;
-  transition: all 0.5s cubic-bezier(0.29, 1.42, 0.79, 1);
+  left: 230px;
+  top: 100px;
+  transition: all 0.75s cubic-bezier(0.29, 1.42, 0.79, 1);
 }
 @media (max-width: 992px) {
   .moving-arrow {

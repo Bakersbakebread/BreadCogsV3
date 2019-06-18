@@ -1,7 +1,7 @@
 .card {
   border-radius: $border-radius-extreme;
-  box-shadow: 0 2px 2px rgba(204, 197, 185, 0.5);
-  background-color: #FFFFFF;
+  box-shadow: 2px 4px 4px rgba(204, 197, 185, 0.5);
+  background-color: #fff;
   color: $card-black-color;
   margin-bottom: 20px;
   position: relative;
@@ -179,7 +179,7 @@
   .author {
     text-align: center;
     text-transform: none;
-    margin-top: -65px;
+    margin-top: -45px;
     .title {
       color: $default-states-color;
       margin: 0;

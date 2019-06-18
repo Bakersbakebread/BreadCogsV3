@@ -18,7 +18,7 @@
 
   &:hover,
   &:focus{
-    outline: 0 !important;
+    // outline: 0 !important;
     @include box-shadow(none);
   }
   &:active,
