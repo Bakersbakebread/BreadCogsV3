@@ -1,5 +1,6 @@
 <template>
   <div>
+    <a href="http://localhost:42356/api/discord/login">TEST</a>
     <h3>ModMail threads</h3>
     <div class="row">
       <div class="col-sm-4">
@@ -12,7 +13,7 @@
           </div>
         </stats-card>
       </div>
-            <div class="col-sm-4">
+      <div class="col-sm-4">
         <stats-card>
           <div class="icon-big text-center icon-warning" slot="header">
             <i class="fa fa-envelope-o" aria-hidden="true"></i>
@@ -32,8 +33,8 @@
           </div>
         </stats-card>
       </div>
-      </div>
-      <div class="row">
+    </div>
+    <div class="row">
       <div class="col">
         <stats-card>
           <div class="icon-big text-center icon-dark" slot="header">
@@ -84,8 +85,9 @@
                 <div v-if="stats.alerts_active" class="col-sm-6 col-12">
                   <p class="mt-3">Modmail alerts channel</p>
                   <p class="alerts-channel">
-                    {{stats.alerts_channel.name}}<br>
-                   <small> {{stats.alerts_channel.id}}</small>
+                    {{stats.alerts_channel.name}}
+                    <br>
+                    <small>{{stats.alerts_channel.id}}</small>
                   </p>
                 </div>
               </div>
@@ -120,6 +122,7 @@
 </template>
 <script>
 import { StatsCard, ChartCard } from "@/components/index";
+import axios from "axios";
 import Chartist from "chartist";
 
 export default {
@@ -130,8 +133,25 @@ export default {
   mounted() {
     //console.log(this.$store)
     this.$store.dispatch("loadAllGuildSettings");
-    this.$store.dispatch("loadAllMembersShort"); 
+    this.$store.dispatch("loadAllMembersShort");
+    this.local()
+    this.tester()
     
+  },
+  methods:{
+    local: function() {
+      axios
+      .post(`http://localhost:42356/api/login-status`)
+      .then(response => localStorage.setItem('user', response.data['id']))
+      .catch(error => console.log(error))
+      },
+
+      tester: function(){
+        var x = localStorage.getItem('user')
+        console.log("------------")
+        console.log(x)
+        console.log("------------")
+      }
   },
   computed: {
     guildSettings: function() {
@@ -139,8 +159,11 @@ export default {
     },
     allMembersShort: function() {
       return this.$store.getters.allMembersShort;
+    },
+    user: function(){
+      return localStorage.getItem('user')
     }
-  },
+    },
   filters: {
     capitalize: function(value) {
       if (!value) return "";

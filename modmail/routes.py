@@ -1,5 +1,6 @@
 from aiohttp import web
-
+from aiohttp_session import get_session
+import aiohttp
 import aiohttp_jinja2
 import json
 from redbot.core import Config
@@ -11,6 +12,10 @@ log = logging.getLogger("red.breadcogs.modmail.rpc")
 config = Config.get_conf(None, identifier=13289648, cog_name="Test")
 
 routes = web.RouteTableDef()
+
+CLIENT_ID = 492019114924048394
+CLIENT_SECRET = "rQNWzDLRUcpsdhI4glYRkY3JBwO6WBl-"
+REDIRECT_URI = "http://localhost:42356/api/discord/callback"
 
 
 async def rpc_call(method, params):
@@ -24,6 +29,55 @@ async def rpc_call(method, params):
     finally:
         await rpc_client.disconnect()
         return call_result
+
+
+async def exchange_code(code):
+    data = {
+        'client_id': CLIENT_ID,
+        'client_secret': CLIENT_SECRET,
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': REDIRECT_URI,
+        'scope': 'identify email connections'
+    }
+    headers = {
+        'Content-Type': 'application/x-www-form-urlencoded'
+    }
+    session = aiohttp.ClientSession()
+    async with session.post(
+        url="https://discordapp.com/api/oauth2/token",
+        data=data,
+        headers=headers
+    ) as r:
+        r = await r.json()
+        session.close()
+        return r
+
+async def get_discord_user(token):
+    session = aiohttp.ClientSession()
+    user = await session.get(
+        "https://discordapp.com/api/v6/users/@me", headers={"Authorization": f"Bearer {token}"}
+    )
+    user_data = await user.json()
+    session.close()
+    return user_data
+
+@routes.get("/api/discord/login")
+async def _discord_login(request):
+    return web.HTTPFound(
+"https://discordapp.com/api/oauth2/authorize?client_id=492019114924048394&redirect_uri=http%3A%2F%2Flocalhost%3A42356%2Fapi%2Fdiscord%2Fcallback&response_type=code&scope=identify%20email%20connections%20guilds")
+
+
+@routes.get("/api/discord/callback")
+async def _discord_callback(request):
+    session = await get_session(request)
+    code = request.rel_url.query['code']
+    token = await exchange_code(code)
+    user = await get_discord_user(token['access_token'])
+    session['token'] = token['access_token']
+    session['user'] = user
+
+    return web.Response(text=json.dumps({"token": session['token'], "user":session['user']}), status=200)
 
 
 @routes.post("/bot/sys-settings")
@@ -65,7 +119,25 @@ async def _all_members_short(request):
     return web.Response(text=json.dumps(response), status=200)
 
 
-@routes.get("/test")
+@routes.post("/api/login-status")
+async def _login_status(request):
+    """
+    Returns session details to front-end
+    """
+    session = await get_session(request)
+    try:
+        user = { "ID": session['user']['id']}
+        return web.Response(text=json.dumps(user), status=200)
+    except KeyError:
+        return web.Response(text=json.dumps({"msg":"NO"}), status=403)
+
+
+@routes.get("/")
 async def _test(request):
+    session = await get_session(request)
+    if 'user' not in session:
+        # add check_guilds here, if ID in role_list, continue
+        response = web.Response(text="NO")
+        return response
     response = aiohttp_jinja2.render_template("index.html", request, {})
     return response
