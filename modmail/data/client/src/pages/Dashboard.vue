@@ -134,24 +134,6 @@ export default {
     //console.log(this.$store)
     this.$store.dispatch("loadAllGuildSettings");
     this.$store.dispatch("loadAllMembersShort");
-    this.local()
-    this.tester()
-    
-  },
-  methods:{
-    local: function() {
-      axios
-      .post(`http://localhost:42356/api/login-status`)
-      .then(response => localStorage.setItem('user', response.data['id']))
-      .catch(error => console.log(error))
-      },
-
-      tester: function(){
-        var x = localStorage.getItem('user')
-        console.log("------------")
-        console.log(x)
-        console.log("------------")
-      }
   },
   computed: {
     guildSettings: function() {

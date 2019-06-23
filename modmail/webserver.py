@@ -12,7 +12,7 @@ from redbot.core.data_manager import bundled_data_path
 from aiohttp_session import setup, get_session, session_middleware
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
-from .routes import routes
+from .routes import routes, error_middleware
 
 log = logging.getLogger("red.breadcogs.modmail.webserver")
 
@@ -24,7 +24,9 @@ class WebServer:
         self.app = web.Application(
             middlewares=[
                 session_middleware(EncryptedCookieStorage(secret_key)),
-            ]
+                error_middleware
+            ],
+            debug=True
         )
         self.bot = bot
         self.port = 42356

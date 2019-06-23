@@ -50,7 +50,7 @@ async def exchange_code(code):
         headers=headers
     ) as r:
         r = await r.json()
-        session.close()
+        await session.close()
         return r
 
 async def get_discord_user(token):
@@ -59,7 +59,7 @@ async def get_discord_user(token):
         "https://discordapp.com/api/v6/users/@me", headers={"Authorization": f"Bearer {token}"}
     )
     user_data = await user.json()
-    session.close()
+    await session.close()
     return user_data
 
 @routes.get("/api/discord/login")
@@ -77,7 +77,7 @@ async def _discord_callback(request):
     session['token'] = token['access_token']
     session['user'] = user
 
-    return web.Response(text=json.dumps({"token": session['token'], "user":session['user']}), status=200)
+    return web.HTTPFound(location=request.app.router['root'].url_for())
 
 
 @routes.post("/bot/sys-settings")
@@ -119,25 +119,41 @@ async def _all_members_short(request):
     return web.Response(text=json.dumps(response), status=200)
 
 
-@routes.post("/api/login-status")
+@routes.get("/api/login-status")
 async def _login_status(request):
     """
     Returns session details to front-end
     """
     session = await get_session(request)
     try:
-        user = { "ID": session['user']['id']}
-        return web.Response(text=json.dumps(user), status=200)
+        user = {"token": session['token']}
     except KeyError:
-        return web.Response(text=json.dumps({"msg":"NO"}), status=403)
+        return web.Response(text="Not logged in", status=403)
+    return web.Response(text=json.dumps(user), status=200)
 
 
-@routes.get("/")
+@web.middleware
+async def error_middleware(request, handler):
+    try:
+        response = await handler(request)
+        if response.status != 404:
+            return response
+        message = response.message
+    except web.HTTPException as ex:
+        if ex.status != 404:
+            raise
+        else:
+            return web.HTTPFound(location= request.app.router['root'].url_for())
+        message = ex.reason
+    return web.json_response({'error': message})
+
+
+@routes.get("/", name="root")
 async def _test(request):
-    session = await get_session(request)
-    if 'user' not in session:
-        # add check_guilds here, if ID in role_list, continue
-        response = web.Response(text="NO")
-        return response
+    # session = await get_session(request)
+    # if 'user' not in session:
+    #     # add check_guilds here, if ID in role_list, continue
+    #     response = web.Response(text="NO")
+    #     return response
     response = aiohttp_jinja2.render_template("index.html", request, {})
     return response

@@ -2,14 +2,17 @@
 <div class="container">
   test
   <a
-  href="/api/discord/login"
+  href="http://localhost:42356/api/discord/login"
   class="btn btn-block">Login</a>
   </div>
 </template>
 
 <script>
 export default {
-name: 'Login'
+name: 'Login',
+mounted() {
+this.$store.dispatch('authUser')
+}
 }
 </script>
 
