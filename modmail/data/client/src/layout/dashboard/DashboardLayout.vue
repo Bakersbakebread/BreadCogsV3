@@ -18,7 +18,7 @@
         <sidebar-link to="/notifications" name="Notifications" icon="ti-bell"/>
         <mobile-menu>
         <li class="nav-item text-light">
-          <img :src="userAvatar" class="avatar"/> {{user.username}}
+          <!-- <img :src="userAvatar" class="avatar"/> {{user.username}} -->
         </li>
       </mobile-menu>
       </template>
