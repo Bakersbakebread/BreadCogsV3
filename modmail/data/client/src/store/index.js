@@ -4,7 +4,7 @@ import axios from "axios";
 
 Vue.use(Vuex)
 
-const URL = "http://localhost:42356"
+const URL = ""
 
 export const store = new Vuex.Store({
   state: {
@@ -12,9 +12,30 @@ export const store = new Vuex.Store({
     allMembersShort: '',
     botSysSettings: '',
     allThreads: '',
-    loading: false
+    loading: true,
+    authToken: localStorage.getItem('token') || null,
+    user: null
   },
   actions: {
+    authUser({commit, state}){
+      axios
+        .get(`/api/login-status`)
+        .then((response) => {
+          (localStorage.setItem('token', response.data['token']));
+        })
+      .catch((error) => {
+        console.log(error)})
+      },
+    getUserDetails({commit, state}){
+      axios
+      .get(
+        "https://discordapp.com/api/v6/users/@me",
+        {headers: {"Authorization": `Bearer ${state.authToken}`}})
+      .then(response => {
+        commit('setUserDetails', (response.data))
+      })
+      .catch(error => console.log(error))
+    },
     setLoading({commit, state}){
       commit('changeLoadingState', state);
     },
@@ -64,6 +85,9 @@ export const store = new Vuex.Store({
     }
   },
   mutations:{
+    setUserDetails(state, user){
+    state.user = user
+  },
     setAllGuildSettings(state, allGuildSettings){
       state.allGuildSettings = allGuildSettings
     },
@@ -81,6 +105,8 @@ export const store = new Vuex.Store({
     }
   },
   getters:{
+    user: state=>state.user,
+    authToken: state =>state.authToken,
     loading: state => state.loading,
     allGuildSettings: state => state.allGuildSettings,
     allMembersShort: state => state.allMembersShort,
