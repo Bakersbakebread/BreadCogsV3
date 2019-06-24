@@ -9,8 +9,8 @@
 .navbar{
   border: $none;
   font-size: $font-size-base;
-  transition: all 0.4s;
-  -webkit-transition: all 0.4s;
+  transition: all 0.1s;
+  -webkit-transition: all 0.1s;
   padding: 0;
   background: $white-color;
   box-shadow: 0 6px 10px -4px rgba(0, 0, 0, 0.15);
@@ -18,7 +18,7 @@
   &.navbar-light {
     background-color: $bg-nude;
     box-shadow: none;
-    border-bottom: 1px solid $medium-gray;
+    border-bottom: 2px solid $medium-gray;
   }
   .navbar-toggler-right{
     float: right;

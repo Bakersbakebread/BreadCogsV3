@@ -6,5 +6,10 @@
 <script>
 export default {};
 </script>
-<style>
+<style scoped>
+.nav-mobile-menu{
+  position:fixed;
+  bottom:50px;
+  left:50px;
+}
 </style>

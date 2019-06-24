@@ -12,12 +12,17 @@ import Typography from "@/pages/Typography.vue";
 import TableList from "@/pages/TableList.vue";
 import BotSystemSettings from "@/pages/BotSystemSettings.vue";
 import MembersPage from "@/pages/MembersPage.vue";
+import LoginPage from "@/pages/LoginPage.vue";
 
 const routes = [
+  { path: "/login", component: LoginPage, name: "login" },
   {
     path: "/",
     component: DashboardLayout,
     redirect: "/dashboard",
+    meta:{
+      requiresAuth: true
+    },
     children: [
       {
         path: "dashboard",

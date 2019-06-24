@@ -11,34 +11,17 @@
         <span class="navbar-toggler-bar"></span>
         <span class="navbar-toggler-bar"></span>
       </button>
-      <!-- <div class="collapse navbar-collapse">
+      <div class="collapse navbar-collapse">
         <ul class="navbar-nav ml-auto">
           <li class="nav-item">
             <a href="#" class="nav-link">
-              <i class="ti-panel"></i>
-              <p>Stats</p>
-            </a>
-          </li>
-          <drop-down class="nav-item"
-                     title="5 Notifications"
-                     title-classes="nav-link"
-                     icon="ti-bell">
-            <a class="dropdown-item" href="#">Notification 1</a>
-            <a class="dropdown-item" href="#">Notification 2</a>
-            <a class="dropdown-item" href="#">Notification 3</a>
-            <a class="dropdown-item" href="#">Notification 4</a>
-            <a class="dropdown-item" href="#">Another notification</a>
-          </drop-down>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="ti-settings"></i>
-              <p>
-                Settings
-              </p>
+              {{user.username}}
+              <img class="img-thumbnail avatar" :src="userAvatar"/>
+              <p></p>
             </a>
           </li>
         </ul>
-      </div> -->
+      </div>
     </div></nav>
 </template>
 <script>
@@ -47,6 +30,12 @@ export default {
     routeName() {
       const { name } = this.$route;
       return this.capitalizeFirstLetter(name);
+    },
+    user(){
+      return this.$store.getters.user;
+    },
+    userAvatar(){
+      return `https://cdn.discordapp.com/avatars/${this.user.id}/${this.user.avatar}`
     }
   },
   data() {
@@ -73,5 +62,12 @@ export default {
   }
 };
 </script>
-<style>
+<style scoped>
+  .avatar {
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
 </style>

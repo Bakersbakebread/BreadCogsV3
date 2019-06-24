@@ -9,7 +9,6 @@
     </loading>
     <side-bar>
       <template slot="links">
-        {{numberOfGuilds}}
         <sidebar-link to="/dashboard" name="Dashboard" icon="ti-panel"/>
         <sidebar-link to="/table-list" name="Threads" icon="ti-view-list-alt"/>
         <sidebar-link to="/members" name="Members" icon="ti-user"/>
@@ -17,8 +16,15 @@
         <sidebar-link to="/bot-settings" name="Redbot Settings" icon="ti-server"/>
         <!-- <sidebar-link to="/maps" name="Map" icon="ti-map"/> -->
         <sidebar-link to="/notifications" name="Notifications" icon="ti-bell"/>
+        <mobile-menu>
+        <li class="nav-item text-light">
+          <!-- <img :src="userAvatar" class="avatar"/> {{user.username}} -->
+        </li>
+      </mobile-menu>
       </template>
+
     </side-bar>
+    
     <div class="main-panel">
       <top-navbar></top-navbar>
 
@@ -54,17 +60,31 @@ export default {
     }
   },
   computed: {
+
     numberOfGuilds: function() {
       return this.$store.getters.allGuildSettings.length;
     },
     loading() {
       return this.$store.getters.loading;
-    }
+    },
+        user(){
+      return this.$store.getters.user;
+    },
+    userAvatar(){
+      return `https://cdn.discordapp.com/avatars/${this.user.id}/${this.user.avatar}`
+    },
   }
 };
 </script>
 
 <style>
+  .avatar {
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    border-radius: 50%;
+    margin-right: 5px;
+  }
 .loader {
     position: absolute;
     top: 50%;
