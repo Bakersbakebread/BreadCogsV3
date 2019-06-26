@@ -32,7 +32,9 @@ class Modmail(commands.Cog):
         )
         self.register_handlers()
 
-        self.config.register_global(enforced_guild=None)
+        self.config.register_global(
+            enforced_guild=None,
+            port=2626)
 
         self.config.register_guild(
             threads=[],
@@ -254,6 +256,14 @@ class Modmail(commands.Cog):
             f"`You have received a ModMail reply:` \n{reply}"
         )
 
+    @modmail.command(name="settings")
+    async def _all_settings(self, ctx):
+        settings_embed = await ModMailSettings(self.bot, ctx, self.config).get_all_settings()
+
+        await ctx.send(embed=settings_embed)
+
+
+
 
     #
     # SETUP
@@ -275,6 +285,16 @@ class Modmail(commands.Cog):
     @modmail.group(name="set")
     async def _set(self, ctx):
         pass
+
+    @_set.command(name="port")
+    async def _set_port(self, ctx, port:int):
+        try:
+            ports = await ModMailSettings(self.bot, ctx, self.config).set_port(port)
+        except InvalidPortRange:
+            return await ctx.send(f'⛔ `{port}` is not a valid port, please choose between `1 - 65535`')
+
+        return await ctx.send(f':tools: Port changed from `{ports[0]}` to `{ports[1]}`')
+
 
     @_set.command(name="channel")
     async def _set_channel(self, ctx, channel: discord.TextChannel = None):
