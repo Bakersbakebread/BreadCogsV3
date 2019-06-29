@@ -3,11 +3,9 @@ import SideBar from "@/components/SidebarPlugin";
 import GlobalComponents from "./globalComponents";
 import GlobalDirectives from "./globalDirectives";
 import "es6-promise/auto";
-// Import component
 import Loading from "vue-loading-overlay";
-// Import stylesheet
 import "vue-loading-overlay/dist/vue-loading.css";
-// Init plugin
+import VTooltip from 'v-tooltip'
 
 //css assets
 import "bootstrap/dist/css/bootstrap.css";
@@ -18,6 +16,7 @@ export default {
   install(Vue) {
     Vue.use(Loading);
     Vue.use(require("vue-moment"));
+    Vue.use(VTooltip);
     Vue.use(GlobalComponents);
     Vue.use(GlobalDirectives);
     Vue.use(SideBar);

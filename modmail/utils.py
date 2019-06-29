@@ -48,7 +48,7 @@ async def modmail_message_to_json(message: discord.Message, alert) -> dict:
         "status": "new",
         "assigned": False,
         "mod_assigned": None,
-        "created_at": message.created_at.isoformat(),
+        "created_at": message.created_at.strftime("%m/%d/%Y, %H:%M"),
         "thread": json_message,
         "reply": {}
     }
@@ -67,7 +67,7 @@ async def modmail_reply_to_json(ctx_message: discord.Message, reply_content) -> 
 
     final_json = {
         "id": ctx_message.id,
-        "created_at": ctx_message.created_at.isoformat(),
+        "created_at": ctx_message.created_at.strftime("%m/%d/%Y, %H:%M"),
         "thread": json_message,
     }
     return final_json

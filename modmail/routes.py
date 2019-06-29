@@ -23,12 +23,11 @@ async def rpc_call(method, params):
     try:
         await rpc_client.connect("127.0.0.1", 6133)
         call_result = await rpc_client.call(method, params)
-        # prints 'pong' (if that's return val of ping)
+        return call_result
     except Exception as e:
         print(e)
     finally:
         await rpc_client.disconnect()
-        return call_result
 
 
 async def exchange_code(code):
@@ -45,13 +44,14 @@ async def exchange_code(code):
     }
     session = aiohttp.ClientSession()
     async with session.post(
-        url="https://discordapp.com/api/oauth2/token",
-        data=data,
-        headers=headers
+            url="https://discordapp.com/api/oauth2/token",
+            data=data,
+            headers=headers
     ) as r:
         r = await r.json()
         await session.close()
         return r
+
 
 async def get_discord_user(token):
     session = aiohttp.ClientSession()
@@ -62,10 +62,11 @@ async def get_discord_user(token):
     await session.close()
     return user_data
 
+
 @routes.get("/api/discord/login")
 async def _discord_login(request):
     return web.HTTPFound(
-"https://discordapp.com/api/oauth2/authorize?client_id=492019114924048394&redirect_uri=http%3A%2F%2Flocalhost%3A42356%2Fapi%2Fdiscord%2Fcallback&response_type=code&scope=identify%20email%20connections%20guilds")
+        "https://discordapp.com/api/oauth2/authorize?client_id=492019114924048394&redirect_uri=http%3A%2F%2Flocalhost%3A42356%2Fapi%2Fdiscord%2Fcallback&response_type=code&scope=identify%20email%20connections%20guilds")
 
 
 @routes.get("/api/discord/callback")
@@ -143,7 +144,7 @@ async def error_middleware(request, handler):
         if ex.status != 404:
             raise
         else:
-            return web.HTTPFound(location= request.app.router['root'].url_for())
+            return web.HTTPFound(location=request.app.router['root'].url_for())
         message = ex.reason
     return web.json_response({'error': message})
 
