@@ -24,9 +24,9 @@ class WebServer:
         self.app = web.Application(
             middlewares=[
                 session_middleware(EncryptedCookieStorage(secret_key)),
-                error_middleware
+                error_middleware,
             ],
-            debug=True
+            debug=True,
         )
         self.bot = bot
         self.port = 42356

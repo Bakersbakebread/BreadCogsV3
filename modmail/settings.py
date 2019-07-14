@@ -5,6 +5,7 @@ from tabulate import tabulate
 
 EMPTY = "⠀"
 
+
 class ModMailSettings:
     def __init__(self, bot: discord.Client, context, config):
         self.bot = bot
@@ -16,14 +17,18 @@ class ModMailSettings:
         settings = []
 
         def true_or_false(value):
-            return ("`Enabled`" if value else "`Disabled`")
+            return "`Enabled`" if value else "`Disabled`"
 
         guild_group = await self.config.guild(guild).all()
         all_group = await self.config.all()
 
-        alerts_channel = self.bot.get_channel(guild_group.get('modmail_alerts_channel', 'None'))
-        enforced_guild = all_group.get('enforced_guild', None)
-        enforced_guild = ("`Disabled`" if not enforced_guild else self.bot.get_guild(enforced_guild))
+        alerts_channel = self.bot.get_channel(
+            guild_group.get("modmail_alerts_channel", "None")
+        )
+        enforced_guild = all_group.get("enforced_guild", None)
+        enforced_guild = (
+            "`Disabled`" if not enforced_guild else self.bot.get_guild(enforced_guild)
+        )
 
         discord_settings = (
             f":bell: Alerts: {true_or_false(guild_group['modmail_alerts'])}\n"
@@ -40,7 +45,6 @@ class ModMailSettings:
         embed.add_field(name="Discord settings", value=discord_settings, inline=True)
         embed.add_field(name="Web settings", value=web_settings, inline=True)
 
-
         return embed
 
     async def get_guild_snippets(self, guild: discord.TextChannel):
@@ -54,13 +58,13 @@ class ModMailSettings:
             "author": self.ctx.author.id,
             "created_at": self.ctx.message.created_at.strftime("%m/%d/%Y, %H:%M"),
             "content": snippet,
-            "code": code
+            "code": code,
         }
 
         async with guild_group.snippets() as snippets:
             snippets.append(snippet_dict)
 
-    async def set_channel(self, channel: discord.TextChannel) -> tuple:
+    async def set_alert_channel(self, channel: discord.TextChannel) -> tuple:
         guild = self.ctx.guild
         before_id = await self.config.guild(guild).modmail_alerts_channel()
 
@@ -71,7 +75,7 @@ class ModMailSettings:
         await self.config.guild(guild).modmail_alerts_channel.set(channel.id)
         after = self.bot.get_channel(channel.id)
 
-        return ((before if before else None), after)
+        return (before if before else None), after
 
     async def set_alerts(self) -> bool:
         guild = self.ctx.guild
@@ -103,4 +107,4 @@ class ModMailSettings:
         after_id = await self.config.enforced_guild()
         after = self.bot.get_guild(after_id)
 
-        return (guild_in_config, after)
+        return guild_in_config, after

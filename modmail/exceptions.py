@@ -13,5 +13,6 @@ class UserNotChosenGuild(Exception):
 class AlertsChannelExists(Exception):
     pass
 
+
 class InvalidPortRange(Exception):
     pass

@@ -41,16 +41,13 @@ async def modmail_message_to_json(message: discord.Message, alert) -> dict:
 
     final_json = {
         "id": message.id,
-        "alert_message": {
-            "channel": alert.channel_id,
-            "message": alert.message_id
-        },
+        "alert_message": {"channel": alert.channel_id, "message": alert.message_id},
         "status": "new",
         "assigned": False,
         "mod_assigned": None,
         "created_at": message.created_at.strftime("%m/%d/%Y, %H:%M"),
         "thread": json_message,
-        "reply": {}
+        "reply": {},
     }
     return final_json
 

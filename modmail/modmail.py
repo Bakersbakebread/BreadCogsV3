@@ -8,7 +8,12 @@ from aiohttp_json_rpc import JsonRpcClient
 import logging
 
 
-from .utils import modmail_message_to_json, multi_guild_finder, author_to_json, modmail_reply_to_json
+from .utils import (
+    modmail_message_to_json,
+    multi_guild_finder,
+    author_to_json,
+    modmail_reply_to_json,
+)
 from .webserver import WebServer
 from .exceptions import *
 from .setup import ModMailSetup
@@ -23,6 +28,7 @@ log = logging.getLogger("red.breadcogs.modmail")
 
 ERROR = "⛔"
 
+
 class Modmail(commands.Cog):
     def __init__(self, bot: discord.Client):
         self.bot = bot
@@ -32,15 +38,10 @@ class Modmail(commands.Cog):
         )
         self.register_handlers()
 
-        self.config.register_global(
-            enforced_guild=None,
-            port=2626)
+        self.config.register_global(enforced_guild=None, min_account_age=None, port=2626)
 
         self.config.register_guild(
-            threads=[],
-            modmail_alerts=True,
-            modmail_alerts_channel=None,
-            snippets=[]
+            threads=[], modmail_alerts=True, modmail_alerts_channel=None, snippets=[]
         )
         default_user = {
             "last_messaged": None,
@@ -56,7 +57,7 @@ class Modmail(commands.Cog):
         #
         # SETUP WEB-SERVER
         #
-        log.info('Attempting to start server')
+        log.info("Attempting to start server")
         self.web = WebServer(self.bot, self, self.config)
         self.web_task = self.bot.loop.create_task(self.web.make_webserver(self.port))
 
@@ -93,7 +94,7 @@ class Modmail(commands.Cog):
             return shared_guilds[0]
 
         table = [[index, guild] for index, guild in enumerate(shared_guilds)]
-        await author.send(
+        prompt = await author.send(
             "We have more than one server in common, please choose from list below where you would like to send the message."
         )
         msg = await author.send(f"```{tabulate(table, tablefmt='presto')}```")
@@ -105,14 +106,15 @@ class Modmail(commands.Cog):
 
         guild = shared_guilds[pred.result]
         await msg.delete()
+        await prompt.delete()
         await self.config.user(author).set_raw("multi_guild_hold", value=False)
         return guild
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
-        if message.author == self.bot.user:
-            return
         if not isinstance(message.channel, discord.abc.PrivateChannel):
+            return
+        if message.author == self.bot.user:
             return
         try:
             await self.is_user_valid(message.author)
@@ -148,9 +150,10 @@ class Modmail(commands.Cog):
             )
 
         alert_message = await self.send_alert(channel, message)
-        Alert = namedtuple('Alert', 'channel_id message_id')
+        Alert = namedtuple("Alert", "channel_id message_id")
         json_message = await modmail_message_to_json(
-            message, (Alert(channel.id, alert_message.id)))
+            message, (Alert(channel.id, alert_message.id))
+        )
         await self.add_thread(guild, json_message)
         await message.author.send(f"✅ Your message has been sent to `{guild.name}`.")
         log.info(
@@ -163,7 +166,7 @@ class Modmail(commands.Cog):
         attachments_urls = [
             message.attachments.url for message.attachments in message.attachments
         ]
-        attached_list = '\n'.join(attachments_urls)
+        attached_list = "\n".join(attachments_urls)
 
         if message.attachments:
             attachments_string = f"**Attachments**\n {attached_list}"
@@ -173,7 +176,8 @@ class Modmail(commands.Cog):
         description = (
             f"**Author** \n"
             f" `{author.name}#{author.discriminator}` \n"
-            f" `{author.id}` "
+            f" `{author.id}` \n\n"
+            f"**Message Content**\n"
             f"```{message.content}```\n"
             f"{attachments_string}"
         )
@@ -182,6 +186,8 @@ class Modmail(commands.Cog):
             description=description,
             color=discord.Color.green(),
         )
+        embed.set_thumbnail(url=f"{author.avatar_url}")
+        embed.set_footer(text=f"MSG ID: {message.id}")
         msg = await channel.send(embed=embed)
         return msg
 
@@ -216,54 +222,60 @@ class Modmail(commands.Cog):
         threads = await self.config.guild(ctx.guild).threads()
 
         # grab this later, and ammend it
-        alert_id = None
+        for thread in threads:
+            if thread['id'] == int(message_id):
+                channel = self.bot.get_channel(thread['alert_message']['channel'])
+                alert_message = await channel.fetch_message(thread['alert_message']['message'])
+                alert_message_embed = alert_message.embeds[0]
 
         if not threads:
-            return await ctx.send('NOt FrEDS VO')
+            return await ctx.send("NOt FrEDS VO")
 
         try:
             int(message_id)
         except ValueError:
-            return await ctx.send(f'{ERROR} `{message_id}` is not a valid message ID.')
+            return await ctx.send(f"{ERROR} `{message_id}` is not a valid message ID.")
 
         for index, thread in enumerate(threads):
-            if thread['id'] == int(message_id):
-                user = self.bot.get_user(thread['thread']['author']['id'])
+            if thread["id"] == int(message_id):
+                user = self.bot.get_user(thread["thread"]["author"]["id"])
                 break
             else:
                 index = -1
                 thread = None
 
         if thread is None:
-            return await ctx.send(f"{ERROR} Could not find ModMail thread with ID `{message_id}`")
-
-
+            return await ctx.send(
+                f"{ERROR} Could not find ModMail thread with ID `{message_id}`"
+            )
 
         async with guild_group.threads() as target:
-            alert_id = target[index]['alert_message_id']
-            target[index]['assigned'] = True
-            target[index]['status'] = "active"
-            target[index]['mod_assigned'] = await author_to_json(ctx.author)
-            target[index]['reply'] = await modmail_reply_to_json(ctx.message, reply)
+            target[index]["assigned"] = True
+            target[index]["status"] = "active"
+            target[index]["mod_assigned"] = await author_to_json(ctx.author)
+            target[index]["reply"] = await modmail_reply_to_json(ctx.message, reply)
 
+        alert_message_embed.add_field(
+            name="Replied",
+            value=(
+                f" `{ctx.author}` replied on {ctx.message.created_at.strftime('%m/%d/%Y')}\n"
+                f" ``` {reply} ```"
+            ))
 
+        alert_message_embed.color = discord.Color.red()
+        alert_message_embed.title = ":mailbox_closed: ModMail closed"
 
-        await alert_id.edit(content = 'NEW CONTENT HERE')
+        await alert_message.edit(embed=alert_message_embed)
 
-
-
-        await user.send(
-            f"`You have received a ModMail reply:` \n{reply}"
-        )
+        await user.send(f"`You have received a ModMail reply:` \n{reply}")
 
     @modmail.command(name="settings")
     async def _all_settings(self, ctx):
-        settings_embed = await ModMailSettings(self.bot, ctx, self.config).get_all_settings()
+        settings_embed = await ModMailSettings(
+            self.bot, ctx, self.config
+        ).get_all_settings()
 
         await ctx.send(embed=settings_embed)
-
-
-
 
     #
     # SETUP
@@ -287,21 +299,22 @@ class Modmail(commands.Cog):
         pass
 
     @_set.command(name="port")
-    async def _set_port(self, ctx, port:int):
+    async def _set_port(self, ctx, port: int):
         try:
             ports = await ModMailSettings(self.bot, ctx, self.config).set_port(port)
         except InvalidPortRange:
-            return await ctx.send(f'⛔ `{port}` is not a valid port, please choose between `1 - 65535`')
+            return await ctx.send(
+                f"⛔ `{port}` is not a valid port, please choose between `1 - 65535`"
+            )
 
-        return await ctx.send(f':tools: Port changed from `{ports[0]}` to `{ports[1]}`')
-
+        return await ctx.send(f":tools: Port changed from `{ports[0]}` to `{ports[1]}`")
 
     @_set.command(name="channel")
     async def _set_channel(self, ctx, channel: discord.TextChannel = None):
         if channel is None:
             channel = ctx.channel
         try:
-            channels = await ModMailSettings(self.bot, ctx, self.config).set_channel(
+            channels = await ModMailSettings(self.bot, ctx, self.config).set_alert_channel(
                 channel
             )
         except AlertsChannelExists:
@@ -321,25 +334,31 @@ class Modmail(commands.Cog):
         try:
             get_guild = self.bot.get_guild(int(guild))
         except ValueError:
-            return await ctx.send(f'⛔ `{guild}` is not a valid guild ID.')
+            return await ctx.send(f"⛔ `{guild}` is not a valid guild ID.")
 
         if get_guild is None:
-            return await ctx.send(f'⛔ `{guild}` is not a valid guild ID. ')
+            return await ctx.send(f"⛔ `{guild}` is not a valid guild ID. ")
 
         else:
             enforced_guild = await ModMailSettings(
-                self.bot, ctx, self.config).set_enforced_guild(int(guild))
+                self.bot, ctx, self.config
+            ).set_enforced_guild(int(guild))
 
-        await ctx.send(f":mailbox_with_mail: Enforced guild set to `{enforced_guild[1]}`")
+        await ctx.send(
+            f":mailbox_with_mail: Enforced guild set to `{enforced_guild[1]}`"
+        )
 
     @_set.command(name="enforce", autohelp=False)
     async def _toggle_enforced_guild(self, ctx):
         if await self.config.enforced_guild() is None:
             return await ctx.send(
-                f':shield: Not enforcing one guild, you can set this using `{ctx.prefix}modmail set guild`')
+                f":shield: Not enforcing one guild, you can set this using `{ctx.prefix}modmail set guild`"
+            )
 
-        unforce_guild = await ModMailSettings(self.bot, ctx, self.config).set_enforced_guild(None)
-        await ctx.send(f':mailbox_with_mail: Disabled single guild enforcement.')
+        unforce_guild = await ModMailSettings(
+            self.bot, ctx, self.config
+        ).set_enforced_guild(None)
+        await ctx.send(f":mailbox_with_mail: Disabled single guild enforcement.")
 
     @_set.command(name="alerts")
     async def _set_alerts_toggle(self, ctx):
@@ -361,14 +380,18 @@ class Modmail(commands.Cog):
         if guild is None:
             guild = ctx.guild
 
-        all_snippets = await ModMailSettings(self.bot, ctx, self.config).get_guild_snippets(guild)
+        all_snippets = await ModMailSettings(
+            self.bot, ctx, self.config
+        ).get_guild_snippets(guild)
 
         await ctx.send(f"Hey bread, all snippets for `{guild}`: ```{all_snippets}```")
 
     @_snippet.command(name="add")
     async def _add_new_snippet(self, ctx, code, *, snippet):
         guild = ctx.guild
-        add_snippet = await ModMailSettings(self.bot, ctx, self.config).add_new_snippet(guild, code, snippet)
+        add_snippet = await ModMailSettings(self.bot, ctx, self.config).add_new_snippet(
+            guild, code, snippet
+        )
 
         await ctx.send(f"Hey bread, I added `{snippet}` to `{guild}`. ")
 
