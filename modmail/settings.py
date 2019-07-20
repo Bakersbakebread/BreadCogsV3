@@ -14,7 +14,6 @@ class ModMailSettings:
 
     async def get_all_settings(self) -> discord.Embed:
         guild = self.ctx.guild
-        settings = []
 
         def true_or_false(value):
             return "`Enabled`" if value else "`Disabled`"
@@ -31,17 +30,17 @@ class ModMailSettings:
         )
 
         discord_settings = (
-            f":bell: Alerts: {true_or_false(guild_group['modmail_alerts'])}\n"
-            f":newspaper: Alert channel: <#{alerts_channel.id}>\n"
-            f":shield: Enforcing single guild: `{enforced_guild}`\n"
-            f":scissors: Available snippets: `{len(guild_group['snippets'])}`"
+            f"Alerts: {true_or_false(guild_group['modmail_alerts'])}\n"
+            f"Alert channel: {('<#{alerts_channel.id}>' if alerts_channel else '`None`')} \n"
+            f"Enforcing single guild: `{enforced_guild}`\n"
+            f"Available snippets: `{len(guild_group['snippets'])}`"
         )
         web_settings = (
-            f":desktop: Port number: `{all_group.get('port')}`\n"
-            f":mouse_three_button: Redirect URI: http://20.73.53.123/callback\n\n"
+            f"Port number: `{all_group.get('port')}`\n"
+            f"Redirect URI: http://20.73.53.123/callback\n\n"
         )
 
-        embed = discord.Embed(title="ModMail Settings")
+        embed = discord.Embed(title="ModMail Settings", color=await self.ctx.embed_color())
         embed.add_field(name="Discord settings", value=discord_settings, inline=True)
         embed.add_field(name="Web settings", value=web_settings, inline=True)
 

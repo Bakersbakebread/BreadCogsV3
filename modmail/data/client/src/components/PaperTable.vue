@@ -17,7 +17,12 @@
         <slot :row="item">
           <td><router-link :to="'/members/' + item.user.id">{{item.user.name}}</router-link></td>
           <td>{{item.message}}</td>
-          <td><v-popover> {{item.created | moment("from")}} <div slot="popover">Popover</div></v-popover>  </td>
+          <td>
+            <tooltip>
+              <span slot="text">{{item.created | moment("from")}}</span>
+              <span slot="tooltip">{{item.created}}</span>
+              </tooltip>
+          </td>
           <td>
             <span
               :class="{

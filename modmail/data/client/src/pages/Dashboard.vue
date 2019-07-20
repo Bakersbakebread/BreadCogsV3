@@ -2,6 +2,10 @@
   <div>
     <a href="http://localhost:42356/api/discord/login">TEST</a>
     <h3>ModMail threads</h3>
+    <tooltip>
+      <div slot="text">My tooltip</div>
+      <div slot="tooltip">My Text</div>
+    </tooltip>
     <div class="row">
       <div class="col-sm-4">
         <stats-card>
