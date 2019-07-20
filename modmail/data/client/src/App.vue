@@ -14,6 +14,7 @@ export default {
   },
     mounted() {
       this.notifyVue('top', 'right');
+      this.$store.dispatch('getUserDetails')
     },
     methods:{
     notifyVue(verticalAlign, horizontalAlign) {

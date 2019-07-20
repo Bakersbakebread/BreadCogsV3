@@ -4,22 +4,30 @@ import aiohttp_cors
 import aiohttp_jinja2
 import jinja2
 import aiohttp
-import discord
 import json
-import os
+import base64
+from cryptography import fernet
 import logging
 from redbot.core.data_manager import bundled_data_path
 from aiohttp_session import setup, get_session, session_middleware
 from aiohttp_session.cookie_storage import EncryptedCookieStorage
 
-from .routes import routes
+from .routes import routes, error_middleware
 
 log = logging.getLogger("red.breadcogs.modmail.webserver")
 
 
 class WebServer:
     def __init__(self, bot, cog, config):
-        self.app = web.Application()
+        fernet_key = fernet.Fernet.generate_key()
+        secret_key = base64.urlsafe_b64decode(fernet_key)
+        self.app = web.Application(
+            middlewares=[
+                session_middleware(EncryptedCookieStorage(secret_key)),
+                error_middleware,
+            ],
+            debug=True,
+        )
         self.bot = bot
         self.port = 42356
         self.handler = None

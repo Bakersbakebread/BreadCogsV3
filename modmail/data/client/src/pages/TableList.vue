@@ -25,8 +25,8 @@
         >Closed</a>
       </drop-down>
 
-      <drop-down 
-      tag="div" 
+      <drop-down
+      tag="div"
       :title="assignedThreads" class="btn btn-light-blue float-sm-right mr-2">
         <a
           @click="assignedThreads = 'all'"
@@ -130,7 +130,7 @@ export default {
             id: data[key].thread.author.id
           },
           message: data[key].thread.content || "Undefined",
-          created: data[key].thread.created_at || "Undefined",
+          created: data[key].created_at,
           status: data[key].status || "Undefined"
         });
       }
