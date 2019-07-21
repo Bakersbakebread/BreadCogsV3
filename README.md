@@ -25,6 +25,11 @@
 
 >Replace `<cog_name`> with the cog you wish to insall.
 
+# Cogs
+
+| Cog Name      | Info          | Cheat |
+| ------------- |:-------------:| -----:|
+| channelcontent      | Restrict your channels to be text or image only | `[p]cog install breadcogs channelcontent` |
 
 # Support
 If you have an issue with one of my cogs, please raise an issue on GitHub or reach out to me on discord in the `Red - Cog Support` server.
