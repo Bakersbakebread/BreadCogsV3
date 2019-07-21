@@ -21,7 +21,7 @@
 
 `[p]repo add breadcogs https://github.com/Bakersbakebread/BreadCogsV3`    
 
-`>cog install breadcogs <cog_name>`
+`[p]cog install breadcogs <cog_name>`
 
 >Replace `<cog_name`> with the cog you wish to insall.
 
