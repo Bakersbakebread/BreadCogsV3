@@ -28,7 +28,7 @@
 # Cogs
 
 | Cog Name      | Info          | Cheat |
-| ------------- |:-------------:| -----:|
+| ------------- |-------------| -----|
 | channelcontent      | Restrict your channels to be text or image only | `[p]cog install breadcogs channelcontent` |
 
 # Support
