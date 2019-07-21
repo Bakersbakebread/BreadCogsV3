@@ -110,16 +110,32 @@ class ChannelContent(commands.Cog):
 
     @commands.group(name="chcontent")
     async def _channel_content(self, ctx):
+        """Lock down your channel to be image, or text only"""
         pass
 
     @_channel_content.command(name="toggle")
     async def _toggle_enabled(self, ctx):
+        """
+        Globally toggle on/off filtering channel content
+
+        Example: `[p]chcontent toggle`
+        """
         prev, new = await self.settings.toggle_is_enabled()
 
         return await ctx.send(f"Toggled channel content filtering from `{prev}` to `{new}`.")
 
     @_channel_content.command(name="silent")
     async def _toggle_silent_remove(self, ctx, channel: discord.TextChannel = None):
+        """
+        Toggle removing messages silently
+
+        This defaults to the channel the command is ran in, but accepts a channel argument.
+
+        If silent is set to False, the user will receive a message when their prohibited message
+        is deleted.
+
+        Example: `[p]chcontent silent  600655665975001098`
+        """
         if channel is None:
             channel = ctx.channel
 
@@ -132,8 +148,8 @@ class ChannelContent(commands.Cog):
         """
         Set the channel to be text only
 
-        :param channel: Defaults to current channel
-        example: [p]chcontent text 591344887128129557
+
+        Example: `[p]chcontent text 591344887128129557`
         """
         if channel is None:
             channel = ctx.channel
@@ -149,8 +165,8 @@ class ChannelContent(commands.Cog):
         """
         Set the channel to be image only
 
-        :param channel: Defaults to current channel
-        example: [p]chcontent image 591344887128129557
+
+        example: `[p]chcontent image 591344887128129557`
         """
         if channel is None:
             channel = ctx.channel
