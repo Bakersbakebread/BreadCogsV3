@@ -13,7 +13,7 @@ from .utils import (
     author_to_json,
     modmail_reply_to_json,
     alert_message_embed,
-send_error_message
+    send_error_message,
 )
 from .webserver import WebServer
 from .exceptions import *
@@ -39,7 +39,9 @@ class Modmail(commands.Cog):
         )
         self.register_handlers()
 
-        self.config.register_global(enforced_guild=None, min_account_age=None, port=2626)
+        self.config.register_global(
+            enforced_guild=None, min_account_age=None, port=2626
+        )
 
         self.config.register_guild(
             threads={}, modmail_alerts=True, modmail_alerts_channel=None, snippets=[]
@@ -121,8 +123,9 @@ class Modmail(commands.Cog):
             log.info(
                 f"Blocked user attempted to send modmail ({message.author.name}-{message.author.id})"
             )
-            await send_error_message(message.author,
-                                     f"You have been blocked from sending mail.")
+            await send_error_message(
+                message.author, f"You have been blocked from sending mail."
+            )
             return
         except UserIsWaitingForReply:
             await message.author.send(
@@ -146,8 +149,7 @@ class Modmail(commands.Cog):
                 f"ModMail not setup: {message.author.name} attempted modmail to {guild}"
             )
             return await send_error_message(
-                message.author,
-                f"`{guild.name}` has not been setup to receive modmail."
+                message.author, f"`{guild.name}` has not been setup to receive modmail."
             )
 
         await message.author.send(f"✅ Your message has been sent to `{guild.name}`.")
@@ -159,14 +161,13 @@ class Modmail(commands.Cog):
 
         if await self.config.guild(guild).modmail_alerts():
             alert_embed = await alert_message_embed(message)
-            alert_message = await channel.send(embed = alert_embed)
-            alert = (Alert(channel.id, alert_message.id))
+            alert_message = await channel.send(embed=alert_embed)
+            alert = Alert(channel.id, alert_message.id)
 
         else:
-            alert = (Alert(channel.id, None))
+            alert = Alert(channel.id, None)
 
-        json_message = await modmail_message_to_json(
-            message, alert)
+        json_message = await modmail_message_to_json(message, alert)
 
         await self.add_thread(message.author, guild, json_message)
 
@@ -201,7 +202,7 @@ class Modmail(commands.Cog):
             await ctx.invoke(self._all_settings)
 
     @modmail.command()
-    async def reply(self, ctx : commands.Context, message_id, *, reply):
+    async def reply(self, ctx: commands.Context, message_id, *, reply):
         """
         Reply to a modmail message
 
@@ -213,9 +214,11 @@ class Modmail(commands.Cog):
 
         # grab this later, and ammend it
         for thread in threads:
-            if thread['id'] == int(message_id):
-                channel = self.bot.get_channel(thread['alert_message']['channel'])
-                alert_message = await channel.fetch_message(thread['alert_message']['message'])
+            if thread["id"] == int(message_id):
+                channel = self.bot.get_channel(thread["alert_message"]["channel"])
+                alert_message = await channel.fetch_message(
+                    thread["alert_message"]["message"]
+                )
                 alert_message_embed = alert_message.embeds[0]
 
         if not threads:
@@ -250,7 +253,8 @@ class Modmail(commands.Cog):
             value=(
                 f" `{ctx.author}` replied on {ctx.message.created_at.strftime('%m/%d/%Y')}\n"
                 f" ``` {reply} ```"
-            ))
+            ),
+        )
 
         alert_message_embed.color = discord.Color.red()
         alert_message_embed.title = ":mailbox_closed: ModMail closed"
@@ -319,9 +323,9 @@ class Modmail(commands.Cog):
         if channel is None:
             channel = ctx.channel
         try:
-            channels = await ModMailSettings(self.bot, ctx, self.config).set_alert_channel(
-                channel
-            )
+            channels = await ModMailSettings(
+                self.bot, ctx, self.config
+            ).set_alert_channel(channel)
         except AlertsChannelExists:
             return await ctx.send(
                 f":mailbox_with_mail: Already sending ModMail alerts to `{channel.name}` "
@@ -341,7 +345,9 @@ class Modmail(commands.Cog):
             unforce_guild = await ModMailSettings(
                 self.bot, ctx, self.config
             ).set_enforced_guild(None)
-            return await ctx.send(f":mailbox_with_mail: Disabled single guild enforcement.")
+            return await ctx.send(
+                f":mailbox_with_mail: Disabled single guild enforcement."
+            )
 
         try:
             get_guild = self.bot.get_guild(int(guild))

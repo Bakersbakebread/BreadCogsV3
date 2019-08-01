@@ -40,7 +40,9 @@ class ModMailSettings:
             f"Redirect URI: http://20.73.53.123/callback\n\n"
         )
 
-        embed = discord.Embed(title="ModMail Settings", color=await self.ctx.embed_color())
+        embed = discord.Embed(
+            title="ModMail Settings", color=await self.ctx.embed_color()
+        )
         embed.add_field(name="Discord settings", value=discord_settings, inline=True)
         embed.add_field(name="Web settings", value=web_settings, inline=True)
 

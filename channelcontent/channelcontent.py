@@ -122,7 +122,9 @@ class ChannelContent(commands.Cog):
         """
         prev, new = await self.settings.toggle_is_enabled()
 
-        return await ctx.send(f"Toggled channel content filtering from `{prev}` to `{new}`.")
+        return await ctx.send(
+            f"Toggled channel content filtering from `{prev}` to `{new}`."
+        )
 
     @_channel_content.command(name="silent")
     async def _toggle_silent_remove(self, ctx, channel: discord.TextChannel = None):
@@ -141,7 +143,9 @@ class ChannelContent(commands.Cog):
 
         prev, new = await self.settings.toggle_silent_remove(channel)
 
-        return await ctx.send(f"Toggled silently removing messages from `{prev}` to `{new}` in `{channel}`.")
+        return await ctx.send(
+            f"Toggled silently removing messages from `{prev}` to `{new}` in `{channel}`."
+        )
 
     @_channel_content.command(name="text")
     async def _set_text_only(self, ctx, channel=None):
@@ -194,13 +198,15 @@ class ChannelContent(commands.Cog):
         Example: [p]chcontent message text {} only allows text messages.
         """
 
-        prev, new = await self.settings.set_text_only_message(channel=ctx.channel, new_message=message)
+        prev, new = await self.settings.set_text_only_message(
+            channel=ctx.channel, new_message=message
+        )
 
         await ctx.send(
             "**Changed text only message from:**\n```{prev}```**To:**\n```{new}``` ".format(
-                prev=prev.format(ctx.channel),
-                new=new.format(ctx.channel)
-            ))
+                prev=prev.format(ctx.channel), new=new.format(ctx.channel)
+            )
+        )
 
     @_set_error_messages.command(name="image")
     async def _set_image_only_message(self, ctx, *, message):
@@ -212,10 +218,12 @@ class ChannelContent(commands.Cog):
         Example: [p]chcontent message text {} only allows text messages.
         """
 
-        prev, new = await self.settings.set_image_only_message(channel=ctx.channel, new_message=message)
+        prev, new = await self.settings.set_image_only_message(
+            channel=ctx.channel, new_message=message
+        )
 
         await ctx.send(
             "**Changed text only message from:**\n```{prev}```**To:**\n```{new}``` ".format(
-                prev=prev.format(ctx.channel),
-                new=new.format(ctx.channel)
-            ))
+                prev=prev.format(ctx.channel), new=new.format(ctx.channel)
+            )
+        )
