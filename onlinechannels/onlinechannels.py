@@ -52,11 +52,11 @@ class OnlineChannels(commands.Cog):
     async def bg_task(self):
         while True:
             n = 60
+            await self.check_online_status(self.guild)
             await self.update_channels()
             await asyncio.sleep(n)
 
     async def update_channels(self):
-        await self.check_online_status(self.guild)
         #edit category
         category = self.guild.get_channel(606534494698078220)
         await category.edit(name=CHANNEL_NAMES['total'].format(len(self.total_online)))
