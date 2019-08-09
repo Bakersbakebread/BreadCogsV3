@@ -7,24 +7,29 @@ from .exceptions import *
 from .settings import R6StatsSettings
 from .api import GetApi
 from .assets.ranks import NAMES
+from .stats_embeds import StatsEmbed
 
 from redbot.core import Config, commands
 from redbot.core.utils.menus import start_adding_reactions
 from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.chat_formatting import error
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
+from redbot.core.checks import is_owner
 
 
 class R6Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.config = Config.get_conf(self, identifier=41398865, force_registration=True)
+        self.config = Config.get_conf(
+            self, identifier=41398865, force_registration=True
+        )
         self.config.register_user(
             username=None,
             platform=None,
             ubisoft_id=None,
             emea_rank=None,
             ncsa_rank=None,
-            apac_rank=None
+            apac_rank=None,
         )
         self.config.register_global(apikey=None)
         self.settings = R6StatsSettings(self.bot, self.config)
@@ -38,36 +43,66 @@ class R6Stats(commands.Cog):
         await msg.delete()
         return pred.result
 
-    @commands.command()
+    @commands.group(name='r6s', aliases=['R6S', 'r6', 'R6', 'R6s'])
+    async def _r6s(self, ctx):
+        pass
+
+    @_r6s.command()
     async def profile(self, ctx, username, platform):
+        """
+        Create your profile to store your username/platform
+
+        Examples:
+            `[p]r6s profile bread pc`
+
+        Platform must be one of the following: `pc`, `xbox`, `ps4`.
+        """
         author = ctx.author
         conf_username, conf_platform = await self.settings.get_username_platform(author)
 
         if conf_username or conf_platform is not None:
             override = await self.yes_or_no(
-                ctx, "You have already set your username and platform. Would you like to override?"
+                ctx,
+                "You have already set your username and platform. Would you like to override?",
             )
             if not override:
                 return await ctx.send(
                     f"Okay. Keeping the following details:"
                     f"\nUsername: `{conf_username}`"
-                    f"\nPlatform: `{conf_platform}`")
+                    f"\nPlatform: `{conf_platform}`"
+                )
 
         try:
-            is_player = await GetApi(self.bot, self.config, username, platform).is_player(author)
+            is_player = await GetApi(
+                self.bot, self.config, username, platform
+            ).is_player(author)
         except NoApiKey:
             return await ctx.send(error("No API key has been set."))
         except InvalidPlatform:
-            return await ctx.send(error(f"`{platform}` is not valid platform. Must be one of `pc`, `xbox` or `ps4`."))
+            return await ctx.send(
+                error(
+                    f"`{platform}` is not valid platform. Must be one of `pc`, `xbox` or `ps4`."
+                )
+            )
         except PlayerNotFound:
             return await ctx.send(error(f"`{username}` not found on `{platform}`."))
 
-        await self.settings.set_username_platform(user=author, username=username, platform=platform)
+        await self.settings.set_username_platform(
+            user=author, username=username, platform=platform
+        )
 
-        return await ctx.send(f'Set your username to `{username}` with the platform `{platform}` ')
+        return await ctx.send(
+            f"Set your username to `{username}` with the platform `{platform}` "
+        )
 
-    @commands.command()
+    @is_owner()
+    @_r6s.command()
     async def api(self, ctx, api_key):
+        """
+        Set the R6stats api key to be used.
+
+        You can grab an api key from the r6stats.com Discord server.
+        """
         conf_api_key = await self.config.apikey()
 
         if conf_api_key is not None:
@@ -81,153 +116,107 @@ class R6Stats(commands.Cog):
 
         return await ctx.send("Your api key has been set. ")
 
-    @commands.command()
+    @_r6s.command()
     async def ranked(self, ctx, username=None, platform=None):
+        """
+        Return your ranked stats for only regions played in Rainbow Six: Siege
+
+        Examples:
+            `[p]r6s ranked` - uses your profile username/platform
+            `[p]r6s ranked bread pc` - uses specified username/platform
+        """
         if username is None or platform is None:
             personal_stats = True
             username, platform = await self.settings.get_username_platform(ctx.author)
             if username is None or platform is None:
                 return await ctx.send(
-                    error(f"You haven't setup your profile yet! Run: `{ctx.prefix}r6s profile <username> <platform>`"))
+                    error(
+                        f"You haven't setup your profile yet! Run: `{ctx.prefix}r6s profile <username> <platform>`"
+                    )
+                )
 
         api = GetApi(self.bot, self.config, username, platform)
         stats = await api.get_ranked_stats()
-        max_rank, max_rank_image = await api.get_max_rank(stats['seasons'].items())
+        max_rank, max_rank_image = await api.get_max_rank(stats["seasons"].items())
+        played_region_stats = await api.get_valid_ranked(stats["seasons"].items())
 
-        played_region_stats = await api.get_valid_ranked(stats['seasons'].items())
-
-        last_updated = datetime.fromisoformat(stats['last_updated'].replace("Z", "")).strftime("%I%p %B %d %Y")
-        description = (
-            f"[Click here to view full stats](http://www.r6stats.com/stats/{stats['ubisoft_id']})\n"
-            f"⏲ Last updated: `{last_updated}`"
+        get_embed = StatsEmbed(username, platform, api)
+        ranked_embed: discord.Embed = await get_embed.ranked_embed(
+            stats, played_region_stats, max_rank_image
         )
-        ranked_embed = discord.Embed(
-            title=f"Ranked stats for {username} on {platform}",
-            description=description)
-
-        ranked_embed.set_thumbnail(url=max_rank_image)
 
         for region, stats in played_region_stats.items():
             if personal_stats:
                 await self.settings.update_config_rank(
-                    user=ctx.author,
-                    region=region,
-                    stats=stats
+                    user=ctx.author, region=region, stats=stats
                 )
-
-
-            kd_value = (
-                f"**Wins:** ⠀`{stats['wins']}`\n"
-                f"**Losses:**⠀`{stats['losses']}`\n"
-                f"⇒ Abandons:⠀`{stats['abandons']}`\n"
-                f"**W/L:**   ⠀`{(stats['wins'] / stats['losses']):.2f}`\n\n"
-                f"**Rank:** `{stats['rank_text']}`\n"
-                f"**MMR:**  `{stats['mmr']}`\n"
-                f"⇒ Max rank: `{NAMES[stats['max_rank']]}`\n"
-                f"⇒ Max MMR: `{stats['max_mmr']}`\n"
-            )
-            ranked_embed.add_field(name=region, value=kd_value)
+                await self.settings.assign_rank_role(
+                    user=ctx.author, guild=ctx.guild, rank=stats["rank"], region=region
+                )
 
         await ctx.send(embed=ranked_embed)
 
-    @commands.command()
+    @_r6s.command()
     async def stats(self, ctx: commands.Context, username=None, platform=None):
+        """
+        Returns your Rainbow Six: Siege stats.
+
+        By default the username / platform are retrieve from your profile, you can specify username and platform.
+
+        Examples:
+            `[p]r6s stats` - uses your profile username/platform
+            `[p]r6s stats bread pc` - uses specified username/platform
+
+        """
         if username is None or platform is None:
             username, platform = await self.settings.get_username_platform(ctx.author)
+            personal_stats = True
             if username is None or platform is None:
                 return await ctx.send(
-                    error(f"You haven't setup your profile yet! Run: `{ctx.prefix}r6s profile <username> <platform>`")
+                    error(
+                        f"You haven't setup your profile yet! Run: `{ctx.prefix}r6s profile <username> <platform>`"
+                    )
                 )
-
+        stats_embeds = []
         try:
-            stats = await GetApi(self.bot, self.config, username, platform).get_generic_stats()
+            api: GetApi = GetApi(self.bot, self.config, username, platform)
+            get_embed = StatsEmbed(username, platform, api)
+
+            generic_stats = await api.get_generic_stats()
+            all_ranked_stats = await api.get_ranked_stats()
+            played_ranked_stats = await api.get_valid_ranked(
+                all_ranked_stats["seasons"].items()
+            )
+            max_rank, max_rank_image = await api.get_max_rank(
+                all_ranked_stats["seasons"].items()
+            )
+
+            if personal_stats:
+                for region, stats in played_ranked_stats.items():
+                    await self.settings.update_config_rank(
+                        user=ctx.author, region=region, stats=stats
+                    )
+                    await self.settings.assign_rank_role(
+                        user=ctx.author, guild=ctx.guild, rank=stats["rank"], region=region
+                    )
+
+            generic_embed: discord.Embed = await get_embed.generic_embed(generic_stats)
+            ranked_embed: discord.Embed = await get_embed.ranked_embed(
+                all_ranked_stats, played_ranked_stats, max_rank_image
+            )
+            aliases_embed: discord.Embed = await get_embed.alias_embed(generic_stats)
+
+            stats_embeds.append(generic_embed)
+            stats_embeds.append(ranked_embed)
+            stats_embeds.append(aliases_embed)
         except PlayerNotFound:
             return await ctx.send(error(f"{username} not found on {platform}"))
 
-        progression = stats['progression']
-        general = stats['stats']['general']
-        q = stats['stats']['queue']
-
-        last_updated = datetime.fromisoformat(stats['last_updated'].replace("Z", "")).strftime("%I%p %B %d %Y")
-
-        description = (
-            f"[Click here to view full stats](http://www.r6stats.com/stats/{stats['ubisoft_id']})\n\n"
-            f"🏆 Level: `{progression['level']}`\n"
-            f"🎲 Lootbox Probability: `{progression['lootbox_probability']}%`\n"
-            f"⏲ Last updated: `{last_updated}`"
+        await menu(
+            ctx,
+            pages=stats_embeds,
+            controls=DEFAULT_CONTROLS,
+            message=None,
+            page=0,
+            timeout=30,
         )
-
-        embed = discord.Embed(title=f"R6 Stats for {username} on {platform}", description=description)
-        embed.set_thumbnail(url=stats['avatar_url_146'])
-
-        kd_value = (
-            f"**Kills:** ⠀`{general['kills']}`\n"
-            f"⇒ Casual: `{q['casual']['kills']}`\n⇒ Ranked: `{q['ranked']['kills']}`\n"
-            f"**Deaths:**⠀`{general['deaths']}`\n"
-            f"⇒ Casual: `{q['casual']['deaths']}`\n⇒ Ranked: `{q['ranked']['deaths']}`\n"
-            f"**K/D:**   ⠀`{general['kd']:.2f}`\n"
-            f"⇒ Casual: `{q['casual']['kd']}`\n⇒ Ranked: `{q['ranked']['kd']}`\n\n"
-        )
-        embed.add_field(name="🔫 K / D", value=kd_value)
-
-        wl_value = (
-            f"**Wins:**  ⠀`{general['wins']}` \n"
-            f"⇒ Casual: `{q['casual']['wins']}`\n⇒ Ranked: `{q['ranked']['wins']}`\n"
-            f"**Losses:**⠀`{general['losses']}`\n"
-            f"⇒ Casual: `{q['casual']['losses']}`\n⇒ Ranked: `{q['ranked']['losses']}`\n"
-            f"**W/L:**   ⠀`{general['wl']:.2f}`\n"
-            f"⇒ Casual: `{q['casual']['wl']}`\n⇒ Ranked: `{q['ranked']['wl']}`\n"
-        )
-        embed.add_field(name="🏅 W / L", value=wl_value)
-
-        headshot_percent = (general['headshots'] / general['kills']) * 100
-        melee_percent = (general['melee_kills'] / general['kills']) * 100
-        suicide_percent = (general['suicides'] / general['deaths']) * 100
-        pen_percent = (general['penetration_kills'] / general['kills']) * 100
-        blind_percent = (general['blind_kills'] / general['kills']) * 100
-
-        general2_value = (
-            f"_Percentage is stat/kills_\n"
-            f"**Headshots:** ⠀`{general['headshots']} ({headshot_percent:.2f}%)`\n"
-            f"**Melees:**   ⠀`{general['melee_kills']} ({melee_percent:.2f}%)`\n"
-            f"**Wallbangs:**   ⠀`{general['penetration_kills']} ({pen_percent:.2f}%)`\n"
-            f"**Blind kills:**   ⠀`{general['blind_kills']} ({blind_percent:.2f}%)`\n"
-            f"**Suicides:**⠀`{general['suicides']} ({suicide_percent:.2f}% of deaths)`\n"
-        )
-        embed.add_field(name="⚰ Kill stats", value=general2_value)
-
-        misc_value = (
-            f"**Gadgets destroyed:** ⠀`{general['gadgets_destroyed']}`\n"
-            f"**Games played:**   ⠀`{general['games_played']}`\n"
-            f"**Rappel breaches:**   ⠀`{general['rappel_breaches']}`\n"
-            f"**Reinforced walls:**   ⠀`{general['reinforcements_deployed']}`\n"
-            f"**Revives:**⠀`{general['revives']}`\n"
-        )
-
-        embed.add_field(name="👉🏼 Misc. stats", value=misc_value)
-
-        embed.add_field(name="React for more", value=f"📌 - Aliases | 🎖 - Ranked")
-
-        aliases_value = (
-            f"**Found {len(stats['aliases'])} aliases for `{username}`**\n\n"
-        )
-        alias_embed = discord.Embed(title="📌 Aliases", description=aliases_value)
-
-        for name in stats['aliases']:
-            seen_at = datetime.fromisoformat(name['last_seen_at'].replace("Z", "")).strftime("%B %d %Y")
-            alias_embed.add_field(
-                name=name['username'],
-                value=f"**Last seen: **`{seen_at}`")
-
-        msg = await ctx.send(embed=embed)
-        start_adding_reactions(msg, ['📌', '🎖'])
-
-        def check(reaction, user):
-            return user == ctx.author
-
-        reaction, user = await ctx.bot.wait_for("reaction_add", check=check)
-        if str(reaction.emoji) == '📌':
-            await ctx.send(embed=alias_embed)
-        if str(reaction.emoji) == '🎖':
-            await ctx.invoke(self.bot.get_cog('R6Stats').ranked)
-        await msg.clear_reactions()

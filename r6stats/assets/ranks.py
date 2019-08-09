@@ -29,7 +29,7 @@ NAMES = {
     2: "Copper III",
     3: "Copper II",
     4: "Copper I",
-    5:"Bronve IV",
+    5: "Bronve IV",
     6: "Bronze III",
     7: "Bronze II",
     8: "Bronze I",
@@ -45,5 +45,5 @@ NAMES = {
     18: "Platinum II",
     19: "Platinum I",
     20: "Diamond",
-    21: "Diamond I"
+    21: "Diamond I",
 }
