@@ -45,6 +45,17 @@ class R6StatsSettings:
             name=role_name,
         )
 
+    async def purge_roles(self, region: int, guild: discord.guild, user: discord.Member) -> None:
+        all_role_names = [(r['name'].format(region)) for k, r in ROLES.items()]
+
+        for role in guild.roles:
+            try:
+                if role.name in all_role_names:
+                    await user.remove_roles(role, reason="R6Stats removing rank role")
+            except IndexError:
+                # role is not a r6stats rank role
+                pass
+
     async def assign_rank_role(
         self, user: discord.Member, guild: discord.Guild, rank: int, region: str
     ):
@@ -55,15 +66,7 @@ class R6StatsSettings:
         if region == "ncsa":
             region = "NA"
 
-        roles_to_remove = []
-        all_role_names = [r['name'] for k, r in ROLES.items()]
-        for role in guild.roles:
-            if role.name in all_role_names:
-                await user.remove_roles(role, reason="R6Stats removing rank role")
-
         role_name = ROLES[rank]["name"].format(region)
         role = await self.get_or_create_role(guild, rank, role_name)
-
-        await asyncio.sleep(1)
 
         await user.add_roles(role, reason="R6Stats Rank Role")
