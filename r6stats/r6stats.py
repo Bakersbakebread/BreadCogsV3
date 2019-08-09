@@ -192,18 +192,6 @@ class R6Stats(commands.Cog):
                 all_ranked_stats["seasons"].items()
             )
 
-            if personal_stats:
-                for region, stats in played_ranked_stats.items():
-                    await self.settings.update_config_rank(
-                        user=ctx.author, region=region, stats=stats
-                    )
-                    await self.settings.assign_rank_role(
-                        user=ctx.author,
-                        guild=ctx.guild,
-                        rank=stats["rank"],
-                        region=region,
-                    )
-
             generic_embed: discord.Embed = await get_embed.generic_embed(generic_stats)
             ranked_embed: discord.Embed = await get_embed.ranked_embed(
                 all_ranked_stats, played_ranked_stats, max_rank_image
@@ -224,3 +212,15 @@ class R6Stats(commands.Cog):
             page=0,
             timeout=30,
         )
+
+        if personal_stats:
+            for region, stats in played_ranked_stats.items():
+                await self.settings.update_config_rank(
+                    user=ctx.author, region=region, stats=stats
+                )
+                await self.settings.assign_rank_role(
+                    user=ctx.author,
+                    guild=ctx.guild,
+                    rank=stats["rank"],
+                    region=region,
+                )
