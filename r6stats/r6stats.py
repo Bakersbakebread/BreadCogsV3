@@ -43,7 +43,7 @@ class R6Stats(commands.Cog):
         await msg.delete()
         return pred.result
 
-    @commands.group(name='r6s', aliases=['R6S', 'r6', 'R6', 'R6s'])
+    @commands.group(name="r6s", aliases=["R6S", "r6", "R6", "R6s"])
     async def _r6s(self, ctx):
         pass
 
@@ -197,7 +197,10 @@ class R6Stats(commands.Cog):
                         user=ctx.author, region=region, stats=stats
                     )
                     await self.settings.assign_rank_role(
-                        user=ctx.author, guild=ctx.guild, rank=stats["rank"], region=region
+                        user=ctx.author,
+                        guild=ctx.guild,
+                        rank=stats["rank"],
+                        region=region,
                     )
 
             generic_embed: discord.Embed = await get_embed.generic_embed(generic_stats)
