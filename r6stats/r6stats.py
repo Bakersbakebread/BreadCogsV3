@@ -168,6 +168,7 @@ class R6Stats(commands.Cog):
             `[p]r6s stats bread pc` - uses specified username/platform
 
         """
+        personal_stats = False
         if username is None or platform is None:
             username, platform = await self.settings.get_username_platform(ctx.author)
             personal_stats = True
