@@ -1,3 +1,6 @@
+from io import BytesIO
+import os
+
 import discord
 
 import logging
@@ -15,6 +18,13 @@ from redbot.core.utils.predicates import ReactionPredicate
 from redbot.core.utils.chat_formatting import error
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.checks import is_owner
+from redbot.core.data_manager import bundled_data_path
+
+import matplotlib
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
+plt.switch_backend("agg")
+import matplotlib.patches as mpatches
 
 class R6Stats(commands.Cog):
     def __init__(self, bot):
@@ -41,6 +51,25 @@ class R6Stats(commands.Cog):
         await ctx.bot.wait_for("reaction_add", check=pred)
         await msg.delete()
         return pred.result
+
+    def create_chart(self, mmr, eu_mmr, asia_mmr, dates, title):
+        fig = plt.figure(figsize=[6.4, 6])
+        fig.suptitle(title)
+        plt.plot(dates, mmr, 'r')
+        plt.plot(dates, eu_mmr, 'b')
+        plt.plot(dates, asia_mmr, 'g')
+        red_patch = mpatches.Patch(color='red', label='NA')
+        blue_patch = mpatches.Patch(color='blue', label='EU')
+        green_patch = mpatches.Patch(color='green', label='ASIA')
+        plt.legend(handles=[red_patch, green_patch, blue_patch])
+        plt.xticks(rotation=90)
+
+        plt.ylim(min(mmr+eu_mmr+asia_mmr), max(mmr+eu_mmr+asia_mmr) + 100)
+        image_object = BytesIO()
+        fig.savefig(image_object, format="PNG")
+        image_object.seek(0)
+        plt.close()
+        return image_object
 
     @commands.group(name="r6s", aliases=["R6S", "r6", "R6", "R6s"])
     async def _r6s(self, ctx):
@@ -124,6 +153,7 @@ class R6Stats(commands.Cog):
             `[p]r6s ranked` - uses your profile username/platform
             `[p]r6s ranked bread pc` - uses specified username/platform
         """
+        personal_stats = False
         if username is None or platform is None:
             personal_stats = True
             username, platform = await self.settings.get_username_platform(ctx.author)
@@ -133,27 +163,60 @@ class R6Stats(commands.Cog):
                         f"You haven't setup your profile yet! Run: `{ctx.prefix}r6s profile <username> <platform>`"
                     )
                 )
+        async with ctx.typing():
 
-        api = GetApi(self.bot, self.config, username, platform)
-        stats = await api.get_ranked_stats()
-        max_rank, max_rank_image = await api.get_max_rank(stats["seasons"].items())
-        played_region_stats = await api.get_valid_ranked(stats["seasons"].items())
+            try:
+                api = GetApi(self.bot, self.config, username, platform)
+                stats = await api.get_ranked_stats()
+                max_rank, max_rank_image = await api.get_max_rank(stats["seasons"].items())
+                played_region_stats = await api.get_valid_ranked(stats["seasons"].items())
 
-        get_embed = StatsEmbed(username, platform, api)
-        ranked_embed: discord.Embed = await get_embed.ranked_embed(
-            stats, played_region_stats, max_rank_image
-        )
+                for k, v in stats['seasons'].items():
+                    break
+                files = []
 
-        for region, stats in played_region_stats.items():
-            if personal_stats:
-                await self.settings.update_config_rank(
-                    user=ctx.author, region=region, stats=stats
-                )
-                await self.settings.assign_rank_role(
-                    user=ctx.author, guild=ctx.guild, rank=stats["rank"], region=region
-                )
+                NA_MMR = [m['mmr'] for m in list(v['regions'].values())[0]]
+                NA_MMR.reverse()
+                EU_MMR = [m['mmr'] for m in list(v['regions'].values())[1]]
+                EU_MMR.reverse()
+                ASIA_MMR = [m['mmr'] for m in list(v['regions'].values())[2]]
+                ASIA_MMR.reverse()
+                NA_DATE = [datetime.fromisoformat(
+                    m['created_for_date'].replace("Z", "")
+                ).strftime("%b, %d") for m in list(v['regions'].values())[0]]
+                NA_DATE.reverse()
+
+                x = self.create_chart(NA_MMR, EU_MMR, ASIA_MMR, NA_DATE,
+                                      title=f"MMR for {username} on {platform}")
+
+                file = discord.File(x, filename=f"foo.png")
+
+                get_embed = StatsEmbed(username, platform, api)
+
+                ranked_embed: discord.Embed = await get_embed.ranked_embed(
+                    stats, played_region_stats, max_rank_image
+                    )
+
+                ranked_embed.set_footer(text="Ranked stats")
+                graph_embed = discord.Embed()
+                graph_embed.set_image(url=f"attachment://foo.png")
+            except PlayerNotFound:
+                return await ctx.send(error(f"{username} not found on {platform}"))
+
+            for region, stats in played_region_stats.items():
+                if personal_stats:
+                    await self.settings.update_config_rank(
+                        user=ctx.author, region=region, stats=stats
+                    )
+                    await self.settings.purge_roles(
+                        user=ctx.author, region=region, guild=ctx.guild
+                    )
+                    await self.settings.assign_rank_role(
+                        user=ctx.author, guild=ctx.guild, rank=stats["rank"], region=region
+                    )
 
         await ctx.send(embed=ranked_embed)
+        await ctx.send(embed=graph_embed, file=file)
 
     @_r6s.command()
     async def stats(self, ctx: commands.Context, username=None, platform=None):
