@@ -9,6 +9,7 @@ class R6StatsSettings:
     def __init__(self, bot, config):
         self.bot = bot
         self.config = config
+        self.regions = {"emea": "EU", "apaca": "ASIA", "ncsa": "NA"}
 
     # player profile stuff
     async def get_username_platform(self, user: discord.Member) -> tuple:
@@ -45,8 +46,12 @@ class R6StatsSettings:
             name=role_name,
         )
 
-    async def purge_roles(self, region: int, guild: discord.guild, user: discord.Member) -> None:
-        all_role_names = [(r['name'].format(region)) for k, r in ROLES.items()]
+    async def purge_roles(
+        self, region: str, guild: discord.guild, user: discord.Member
+    ) -> None:
+        all_role_names = [
+            (r["name"].format(self.regions[region])) for k, r in ROLES.items()
+        ]
 
         for role in guild.roles:
             try:
@@ -59,14 +64,8 @@ class R6StatsSettings:
     async def assign_rank_role(
         self, user: discord.Member, guild: discord.Guild, rank: int, region: str
     ):
-        if region == "apac":
-            region = "ASIA"
-        if region == "emea":
-            region = "EU"
-        if region == "ncsa":
-            region = "NA"
 
-        role_name = ROLES[rank]["name"].format(region)
+        role_name = ROLES[rank]["name"].format(self.regions[region])
         role = await self.get_or_create_role(guild, rank, role_name)
 
         await user.add_roles(role, reason="R6Stats Rank Role")

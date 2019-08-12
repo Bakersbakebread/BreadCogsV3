@@ -219,13 +219,8 @@ class R6Stats(commands.Cog):
                     user=ctx.author, region=region, stats=stats
                 )
                 await self.settings.purge_roles(
-                    user=ctx.author,
-                    region=region,
-                    guild=ctx.guild
+                    user=ctx.author, region=region, guild=ctx.guild
                 )
                 await self.settings.assign_rank_role(
-                    user=ctx.author,
-                    guild=ctx.guild,
-                    rank=stats["rank"],
-                    region=region,
+                    user=ctx.author, guild=ctx.guild, rank=stats["rank"], region=region
                 )
