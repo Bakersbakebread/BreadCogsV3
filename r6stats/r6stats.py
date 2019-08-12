@@ -16,7 +16,6 @@ from redbot.core.utils.chat_formatting import error
 from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from redbot.core.checks import is_owner
 
-
 class R6Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -179,30 +178,31 @@ class R6Stats(commands.Cog):
                     )
                 )
         stats_embeds = []
-        try:
-            api: GetApi = GetApi(self.bot, self.config, username, platform)
-            get_embed = StatsEmbed(username, platform, api)
+        async with ctx.typing():
+            try:
+                api: GetApi = GetApi(self.bot, self.config, username, platform)
+                get_embed = StatsEmbed(username, platform, api)
 
-            generic_stats = await api.get_generic_stats()
-            all_ranked_stats = await api.get_ranked_stats()
-            played_ranked_stats = await api.get_valid_ranked(
-                all_ranked_stats["seasons"].items()
-            )
-            max_rank, max_rank_image = await api.get_max_rank(
-                all_ranked_stats["seasons"].items()
-            )
+                generic_stats = await api.get_generic_stats()
+                all_ranked_stats = await api.get_ranked_stats()
+                played_ranked_stats = await api.get_valid_ranked(
+                    all_ranked_stats["seasons"].items()
+                )
+                max_rank, max_rank_image = await api.get_max_rank(
+                    all_ranked_stats["seasons"].items()
+                )
 
-            generic_embed: discord.Embed = await get_embed.generic_embed(generic_stats)
-            ranked_embed: discord.Embed = await get_embed.ranked_embed(
-                all_ranked_stats, played_ranked_stats, max_rank_image
-            )
-            aliases_embed: discord.Embed = await get_embed.alias_embed(generic_stats)
+                generic_embed: discord.Embed = await get_embed.generic_embed(generic_stats)
+                ranked_embed: discord.Embed = await get_embed.ranked_embed(
+                    all_ranked_stats, played_ranked_stats, max_rank_image
+                )
+                aliases_embed: discord.Embed = await get_embed.alias_embed(generic_stats)
 
-            stats_embeds.append(generic_embed)
-            stats_embeds.append(ranked_embed)
-            stats_embeds.append(aliases_embed)
-        except PlayerNotFound:
-            return await ctx.send(error(f"{username} not found on {platform}"))
+                stats_embeds.append(generic_embed)
+                stats_embeds.append(ranked_embed)
+                stats_embeds.append(aliases_embed)
+            except PlayerNotFound:
+                return await ctx.send(error(f"{username} not found on {platform}"))
 
         await menu(
             ctx,
