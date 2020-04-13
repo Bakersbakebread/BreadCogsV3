@@ -2,7 +2,7 @@ import discord
 
 from typing import Union, Optional
 from discord.ext.commands import Greedy
-from redbot.core import Config
+from redbot.core import Config, checks
 from redbot.core.commands import commands
 
 from .listeners import AutoReactListeners
@@ -82,6 +82,7 @@ class AutoReact(AutoReactListeners, commands.Cog):
             raise DontOverrideException()
 
     @commands.group(name="autoreact", aliases=["ar"])
+    @checks.mod_or_permissions(manage_messages=True)
     async def autoreact_group(self, ctx):
         """
         Auto react to messages, by channel or by member.
@@ -89,6 +90,7 @@ class AutoReact(AutoReactListeners, commands.Cog):
         pass
 
     @autoreact_group.command(name="channel", aliases=["ch", "chan"])
+    @checks.mod_or_permissions(manage_messages=True)
     async def _channel_reactions(
         self,
         ctx,
@@ -133,6 +135,7 @@ class AutoReact(AutoReactListeners, commands.Cog):
             return await ctx.send("Missing permissions to add reactions.")
 
     @autoreact_group.command(name="member")
+    @checks.mod_or_permissions(manage_messages=True)
     async def _member_reactions(
             self,
             ctx,
