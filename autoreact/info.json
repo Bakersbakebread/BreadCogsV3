@@ -1,0 +1,16 @@
+{
+    "author": [
+        "Bread#0007"
+    ],
+    "description": "Auto add reactions, channel or member specific",
+    "hidden": false,
+    "install_msg": "🍞 Thank you for installing AutoReact!",
+    "required_cogs": [],
+    "requirements": [],
+    "short": "Auto react to messages",
+    "tags": [
+        "command",
+        "reactions",
+        "auto"
+    ]
+}
