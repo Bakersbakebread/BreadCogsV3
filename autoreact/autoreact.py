@@ -114,9 +114,9 @@ class AutoReact(AutoReactListeners, commands.Cog):
             await self.check_emojis_for_inavlid(ctx.message, emojis)
             await self.confirm_override(ctx, await self.config.channel(channel).emojis())
             sanitised_emojis = [str(emoji) for emoji in emojis]
-            await self.config.channel(ctx.channel).emojis.set(sanitised_emojis)
+            await self.config.channel(channel).emojis.set(sanitised_emojis)
             if ignore_bots:
-                await self.config.channel(ctx.channel).ignore_bots.set(ignore_bots)
+                await self.config.channel(channel).ignore_bots.set(ignore_bots)
             if emojis:
                 return await ctx.send(
                 f"{' '.join(sanitised_emojis)} will be added to every message in {channel.mention}."
