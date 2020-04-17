@@ -4,9 +4,13 @@ from typing import Union, Optional
 from discord.ext.commands import Greedy
 from redbot.core import Config, checks
 from redbot.core.commands import commands
+from redbot.core.utils.chat_formatting import box
+from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 
 from .listeners import AutoReactListeners
-from .utils import yes_or_no
+from .utils import yes_or_no, chunks
+
+from tabulate import tabulate
 
 
 class EmoijiValidationException(Exception):
@@ -89,6 +93,57 @@ class AutoReact(AutoReactListeners, commands.Cog):
         """
         pass
 
+    @autoreact_group.command(name="chanlist")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def _list_current_reactions(self, ctx):
+        """List all channel reactions
+        """
+        all_channels = await self.config.all_channels()
+        table = []
+        headers = ['Channel', 'Emojis', 'Ignoring bots']
+        # embed = discord.Embed(title="Current active channels")
+        embeds = []
+        for k, v in all_channels.items():
+            embed = discord.Embed()
+            table.append([self.bot.get_channel(k), v['emojis'], v['ignore_bots']])
+
+        chunked = chunks(table, 6)
+        for chunk in chunked:
+            embed = discord.Embed(title="Active Channels")
+            for channel in chunk:
+                channel, emojis, ignore_bots = channel
+                embed.add_field(name=channel, value=box(f"{emojis}\n{'- Ignoring bots' if ignore_bots is False else ''}", "diff"))
+            embeds.append(embed)
+        if len(embeds) > 1:
+            return await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            return await ctx.send(embed=embed)
+
+    @autoreact_group.command(name="memblist")
+    @checks.mod_or_permissions(manage_messages=True)
+    async def list_member_reactions(self, ctx):
+        """List all member reactions
+        """
+        all_members = await self.config.all_members(ctx.guild)
+        table = []
+        embeds = []
+        for k, v in all_members.items():
+            embed = discord.Embed()
+            table.append([self.bot.get_user(k), v['emojis']])
+
+        chunked = chunks(table, 6)
+        for chunk in chunked:
+            embed = discord.Embed(title="Member's reacting to")
+            for member in chunk:
+                member_id, emojis = member
+                embed.add_field(name=member_id,
+                                value=box(f"{emojis}"))
+            embeds.append(embed)
+        if len(embeds) > 1:
+            return await menu(ctx, embeds, DEFAULT_CONTROLS)
+        else:
+            return await ctx.send(embed=embed)
+
     @autoreact_group.command(name="channel", aliases=["ch", "chan"])
     @checks.mod_or_permissions(manage_messages=True)
     async def _channel_reactions(
@@ -99,12 +154,13 @@ class AutoReact(AutoReactListeners, commands.Cog):
         emojis: Greedy[Union[discord.PartialEmoji, discord.Emoji, str]]
     ):
         """Channel-specific reactions
+
         ```ini
         [channel]
         The channel where reactions will be added```
         ```ini
         [ignore_bots]
-        Boolean to set ignoring bots, this is False by default.```
+        Boolean to set ignoring bots, this is True by default.```
         ```ini
         [emojis]
         The emojis add to the message```
@@ -115,13 +171,14 @@ class AutoReact(AutoReactListeners, commands.Cog):
             await self.confirm_override(ctx, await self.config.channel(channel).emojis())
             sanitised_emojis = [str(emoji) for emoji in emojis]
             await self.config.channel(channel).emojis.set(sanitised_emojis)
-            if ignore_bots:
+            if ignore_bots is False:
                 await self.config.channel(channel).ignore_bots.set(ignore_bots)
             if emojis:
                 return await ctx.send(
                 f"{' '.join(sanitised_emojis)} will be added to every message in {channel.mention}."
             )
             else:
+                await self.config.channel(channel).clear()
                 return await ctx.send(
                     f"🧹 Reactions will not be added in {channel.mention}"
                 )
@@ -162,6 +219,7 @@ class AutoReact(AutoReactListeners, commands.Cog):
                 f"{' '.join(sanitised_emojis)} will be added to every message posted by `{member}` - `{member.id}`."
             )
             else:
+                await self.config.member(member).clear()
                 return await ctx.send(
                     f"🧹 Reactions will not be added to any messages by `{member}`"
                 )
