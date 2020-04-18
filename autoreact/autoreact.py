@@ -10,8 +10,6 @@ from redbot.core.utils.menus import menu, DEFAULT_CONTROLS
 from .listeners import AutoReactListeners
 from .utils import yes_or_no, chunks
 
-from tabulate import tabulate
-
 
 class EmoijiValidationException(Exception):
     def __init__(self, message, emojis):
@@ -100,24 +98,32 @@ class AutoReact(AutoReactListeners, commands.Cog):
         """
         all_channels = await self.config.all_channels()
         table = []
-        headers = ['Channel', 'Emojis', 'Ignoring bots']
-        # embed = discord.Embed(title="Current active channels")
         embeds = []
         for k, v in all_channels.items():
             embed = discord.Embed()
-            table.append([self.bot.get_channel(k), v['emojis'], v['ignore_bots']])
+            table.append([self.bot.get_channel(k), v["emojis"], v["ignore_bots"]])
 
         chunked = chunks(table, 6)
         for chunk in chunked:
             embed = discord.Embed(title="Active Channels")
             for channel in chunk:
                 channel, emojis, ignore_bots = channel
-                embed.add_field(name=channel, value=box(f"{emojis}\n{'- Ignoring bots' if ignore_bots is False else ''}", "diff"))
+                embed.add_field(
+                    name=channel,
+                    value=box(
+                        f"{emojis}\n{'- bots included' if ignore_bots is False else ''}",
+                        "diff",
+                    ),
+                )
             embeds.append(embed)
-        if len(embeds) > 1:
-            return await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            return await ctx.send(embed=embed)
+        try:
+            if len(embeds) > 1:
+                return await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                return await ctx.send(embed=embed)
+        except UnboundLocalError:
+            # nothing being reacted too
+            return await ctx.send("Not reacting to any members.")
 
     @autoreact_group.command(name="memblist")
     @checks.mod_or_permissions(manage_messages=True)
@@ -129,20 +135,23 @@ class AutoReact(AutoReactListeners, commands.Cog):
         embeds = []
         for k, v in all_members.items():
             embed = discord.Embed()
-            table.append([self.bot.get_user(k), v['emojis']])
+            table.append([self.bot.get_user(k), v["emojis"]])
 
         chunked = chunks(table, 6)
         for chunk in chunked:
             embed = discord.Embed(title="Member's reacting to")
             for member in chunk:
                 member_id, emojis = member
-                embed.add_field(name=member_id,
-                                value=box(f"{emojis}"))
+                embed.add_field(name=member_id, value=box(f"{emojis}"))
             embeds.append(embed)
-        if len(embeds) > 1:
-            return await menu(ctx, embeds, DEFAULT_CONTROLS)
-        else:
-            return await ctx.send(embed=embed)
+        try:
+            if len(embeds) > 1:
+                return await menu(ctx, embeds, DEFAULT_CONTROLS)
+            else:
+                return await ctx.send(embed=embed)
+        except UnboundLocalError:
+            # nothing being reacted too
+            return await ctx.send("Not reacting to any members.")
 
     @autoreact_group.command(name="channel", aliases=["ch", "chan"])
     @checks.mod_or_permissions(manage_messages=True)
@@ -150,8 +159,8 @@ class AutoReact(AutoReactListeners, commands.Cog):
         self,
         ctx,
         channel: discord.TextChannel,
-        ignore_bots: Optional[bool] ,
-        emojis: Greedy[Union[discord.PartialEmoji, discord.Emoji, str]]
+        ignore_bots: Optional[bool],
+        emojis: Greedy[Union[discord.PartialEmoji, discord.Emoji, str]],
     ):
         """Channel-specific reactions
 
@@ -175,13 +184,11 @@ class AutoReact(AutoReactListeners, commands.Cog):
                 await self.config.channel(channel).ignore_bots.set(ignore_bots)
             if emojis:
                 return await ctx.send(
-                f"{' '.join(sanitised_emojis)} will be added to every message in {channel.mention}."
-            )
+                    f"{' '.join(sanitised_emojis)} will be added to every message in {channel.mention}."
+                )
             else:
                 await self.config.channel(channel).clear()
-                return await ctx.send(
-                    f"🧹 Reactions will not be added in {channel.mention}"
-                )
+                return await ctx.send(f"🧹 Reactions will not be added in {channel.mention}")
         except DontOverrideException:
             # User does not want to override existing reactions
             return await ctx.send(f"👍 Okay. Nothing's changed.")
@@ -194,10 +201,10 @@ class AutoReact(AutoReactListeners, commands.Cog):
     @autoreact_group.command(name="member")
     @checks.mod_or_permissions(manage_messages=True)
     async def _member_reactions(
-            self,
-            ctx,
-            member: Union[discord.Member, discord.User],
-            emojis: Greedy[Union[discord.PartialEmoji, discord.Emoji, str]]
+        self,
+        ctx,
+        member: Union[discord.Member, discord.User],
+        emojis: Greedy[Union[discord.PartialEmoji, discord.Emoji, str]],
     ):
         """Member-specific reactions
 
@@ -216,8 +223,8 @@ class AutoReact(AutoReactListeners, commands.Cog):
             await self.config.member(member).emojis.set(sanitised_emojis)
             if emojis:
                 return await ctx.send(
-                f"{' '.join(sanitised_emojis)} will be added to every message posted by `{member}` - `{member.id}`."
-            )
+                    f"{' '.join(sanitised_emojis)} will be added to every message posted by `{member}` - `{member.id}`."
+                )
             else:
                 await self.config.member(member).clear()
                 return await ctx.send(
