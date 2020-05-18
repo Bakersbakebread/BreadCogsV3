@@ -1,0 +1,14 @@
+{
+    "author": [
+        "Bread#0007"
+    ],
+    "description": "Sort members into teams, by list of members or ",
+    "hidden": false,
+    "install_msg": "🍞 Thank you for installing teamshuffle!",
+    "short": "Sort members into `n` groups!",
+    "tags": [
+        "members",
+        "groups",
+        "sort"
+    ]
+}
