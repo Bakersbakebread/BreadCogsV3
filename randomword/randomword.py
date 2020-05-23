@@ -3,14 +3,14 @@ import random
 import asyncio
 import logging
 
-from typing import Optional
+from typing import Optional, Dict, List, Any, Union
 from redbot.core.commands import commands
 from redbot.core.data_manager import bundled_data_path
 from redbot.core.utils.chat_formatting import pagify
 
 log = logging.getLogger(name="red.breadcogs.randomword")
 
-LEET = {
+LEET: Dict[str, List[str]] = {
     "a": ["4", "@"],
     "b": ["8",],
     "c": ["(",],
@@ -29,7 +29,7 @@ LEET = {
     "z": ["2",],
 }
 
-LEET_SHORT = {
+LEET_SHORT: Dict[str, str] = {
     "a": "4",
     "b": "8",
     "e": "3",
@@ -46,12 +46,15 @@ class RandomWord(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.data_path = bundled_data_path(self)
-        self.adjectives = []
-        self.nouns = []
-        self.verbs = []
+        self.adjectives: List[str] = []
+        self.nouns: List[str] = []
+        self.verbs: List[str] = []
         asyncio.create_task(self.register_words())
 
-    async def register_words(self):
+    async def register_words(self) -> None:
+        """
+        Get's words from cog data path and saves them to an instance var.
+        """
         with open(f"{self.data_path}/adjectives.txt") as f:
             adjectives = [line.rstrip() for line in f]
             self.adjectives = adjectives
@@ -82,10 +85,10 @@ class RandomWord(commands.Cog):
         for char in word:
             char_copy = char.lower()
             if char_copy in LEET:
-                if random.randint(0, 100) > 80:
+                if random.random() > 0.8:  # NOT EXACTLY 80% - I'm sorry Mom
                     char = random.choice(LEET[char_copy])
             else:
-                if random.randint(0, 100) > 10:
+                if random.random() < 0.2:  # NOT EXACTLY 20%
                     char = char.upper()
             leeted_word += char
 
@@ -97,12 +100,36 @@ class RandomWord(commands.Cog):
         words = [self.long_leet_word(word) for word in words]
         await ctx.send(" ".join(words))
 
-    @commands.group(name="randomword", aliases=["rword"])
+    @commands.command(name="leetmember", aliases=["leetmem", "leetmemb"])
+    async def _leet_member(self, ctx, member: discord.Member = None):
+        """L33T a Member's name!"""
+        member = ctx.author if member is None else member
+        to_change = member.nick if member.nick else member.name
+
+        await ctx.send(self.long_leet_word(to_change))
+
+    @commands.group(name="randomword", aliases=["rword", "notexactlyrandomword"])
     async def _random_word(self, ctx):
         """Make a random word!"""
 
+    @_random_word.command(name="verb")
+    async def _random_verb(self, ctx):
+        """Get a random verb!"""
+        await ctx.send(random.choice(self.verbs))
+
+    @_random_word.command(name="adjective")
+    async def _random_adjective(self, ctx):
+        """Get a random adjective!"""
+        await ctx.send(random.choice(self.adjectives))
+
+    @_random_word.command(name="noun")
+    async def _random_noun(self, ctx):
+        """Get a random noun!"""
+        await ctx.send(random.choice(self.nouns))
+
     @_random_word.command(name="leet")
     async def _random_leet_word(self, ctx, short_leet: Optional[bool] = False, length: int = 1):
+        """Get a random leeted word, or words!"""
         if length > 10000:
             return await ctx.send(":expressionless:")
         if length > 100:
@@ -126,10 +153,6 @@ class RandomWord(commands.Cog):
         adjective = random.choice(self.adjectives)
         verb = random.choice(self.verbs)
         noun = random.choice(self.nouns)
-        log.info("test...")
-        log.warning("test...")
-        log.warn("test...")
-
         brand_name = f"{verb.title()} {adjective.title()} {noun.title()}"
         try:
             await ctx.send(f"{brand_name}™")
@@ -139,6 +162,5 @@ class RandomWord(commands.Cog):
         if member:
             try:
                 await member.edit(nick=brand_name, reason="Brand name changer")
-            except Exception as e:
-                await ctx.send(e)
-                log.warning(f"[BrandName] Failed to edit member")
+            except discord.errors.Forbidden:
+                log.warning(f"Could not edit member's nick due to missing permissions.")
