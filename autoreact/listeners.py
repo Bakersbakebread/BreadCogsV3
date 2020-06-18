@@ -23,9 +23,15 @@ class AutoReactListeners:
     async def on_message_without_command(
         self, message: discord.Message,
     ):
+        if not message.guild:
+            return  # no DMs...
+
         channel_emojis = await self.config.channel(message.channel).emojis()
-        member_emojis = await self.config.member(message.author).emojis()
         ignore_bots = await self.config.channel(message.channel).ignore_bots()
+        try:
+            member_emojis = await self.config.member(message.author).emojis()
+        except AttributeError:  # members probably a system message..
+            member_emojis = []
 
         if ignore_bots is True and message.author.bot:
             return
