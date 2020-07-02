@@ -1,0 +1,14 @@
+{
+    "author": [
+        "Bread#0007"
+    ],
+    "description": "Archive a channel into an MD file!",
+    "hidden": false,
+    "install_msg": "🍞 Thank you for installing Channel Archive!\n\nUse carefully, stay away from mega-channels.",
+    "short": "Archive a channel into an md",
+    "tags": [
+        "archive",
+        "channel",
+        "messages"
+    ]
+}
