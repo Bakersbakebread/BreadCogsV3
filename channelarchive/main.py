@@ -5,7 +5,7 @@ import logging
 from redbot.core.commands import commands
 from redbot.core.data_manager import bundled_data_path
 
-from cogs.CogManager.BreadCogsV3.channelarchive.models import FileDTO, MessageDTO
+from .models import FileDTO, MessageDTO
 
 FILENAME = "channelarchive.md"
 TEN_DASH = "-" * 10
