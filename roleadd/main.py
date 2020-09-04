@@ -2,6 +2,7 @@ from typing import Sequence
 
 import discord
 from discord.ext.commands import Greedy
+from redbot.core import checks
 
 from redbot.core.config import Config
 from redbot.core.commands import commands
@@ -25,6 +26,7 @@ class RoleAdd(commands.Cog, RoleAddSetService):
         self.config = Config.get_conf(self, identifier=12903810928309)
         self.config.register_role(**DEFAULT_ROLE)
 
+    @checks.admin_or_permissions(manage_roles=True)
     @commands.group(name="roleaddset")
     async def roleaddset(self, ctx):
         """Settings for role add"""
