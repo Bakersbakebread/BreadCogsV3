@@ -75,7 +75,7 @@ class RoleAdd(commands.Cog, RoleAddSetService):
         pass
 
     @allowlist.command(name="add")
-    async def _add_role(self, ctx, manager_role: discord.Role, roles_to_allow: Greedy[discord.Role]):
+    async def _add_role_to_allowlist(self, ctx, manager_role: discord.Role, roles_to_allow: Greedy[discord.Role]):
         """
         Add roles to be allowed to be managed by the manager role.
 
