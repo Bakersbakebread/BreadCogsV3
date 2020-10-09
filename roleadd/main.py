@@ -137,9 +137,11 @@ class RoleAdd(commands.Cog, RoleAddSetService):
 
         try:
             if allowlist and role_to_add.id in allowlist:
+                await ctx.tick()
                 return await user.add_roles(role_to_add, reason=f"Requested by {ctx.author}")
 
             if denylist and role_to_add.id not in denylist:
+                await ctx.tick()
                 return await user.add_roles(role_to_add, reason=f"Requested by {ctx.author}")
         except discord.errors.Forbidden as e:
             return await ctx.send(f"`{e.text}` - I am unable to add that role.")
