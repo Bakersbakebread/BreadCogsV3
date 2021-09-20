@@ -1,5 +1,6 @@
 import discord
 import yaml
+from redbot.core import checks
 from redbot.core.commands import commands
 from dislash import *
 
@@ -16,6 +17,7 @@ class BtnRoles(commands.Cog):
         self.bot.slash.teardown()
 
     @commands.command()
+    @checks.admin_or_permissions(manage_roles=True)
     async def setroles(self, ctx, *, message: str):
         """Give roles using buttons & YAML."""
         if not ctx.message.attachments:
