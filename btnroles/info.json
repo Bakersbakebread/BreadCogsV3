@@ -1,0 +1,14 @@
+{
+    "author": [
+        "Bread#0007"
+    ],
+    "description": "Award roles from buttons!" ,
+    "hidden": false,
+    "install_msg": "🍞 Thank you for installing btn roles, make sure to install dislash!",
+    "short": "Role reactions, but buttons",
+    "tags": [
+        "reaction",
+        "roles",
+        "buttons"
+    ]
+}
