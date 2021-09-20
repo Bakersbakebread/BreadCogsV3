@@ -3,6 +3,7 @@ import yaml
 from redbot.core import checks
 from redbot.core.commands import commands
 from dislash import *
+from yaml.scanner import ScannerError
 
 
 class BtnRoles(commands.Cog):
@@ -27,7 +28,11 @@ class BtnRoles(commands.Cog):
         if not attachment.filename.lower().endswith((".yaml", ".yml")):
             return await ctx.send("Only YAML is supported.", delete_after=20)
 
-        yaml_file = yaml.safe_load(await attachment.read())
+        try:
+            yaml_file = yaml.safe_load(await attachment.read())
+        except yaml.scanner.ScannerError as e:
+            return await ctx.send(f"YAML is invalid\n{e.problem_mark}")
+
         btns = []
         for label, config in yaml_file.items():
             b = Button(
@@ -50,8 +55,9 @@ class BtnRoles(commands.Cog):
                 delete_after=20)
 
         if role.id in [r.id for r in inter.author.roles]:
+            await inter.author.remove_roles(role)
             return await inter.reply(
-                f"🙃 You've already got the role `{role}`!",
+                f"🙃 I've removed the role `{role}` from you!",
                 ephemeral=True,
                 delete_after=20)
 
