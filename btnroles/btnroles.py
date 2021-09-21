@@ -5,6 +5,12 @@ from redbot.core.commands import commands
 from dislash import *
 from yaml.scanner import ScannerError
 
+CUSTOM_ID_PREFIX = "btnroles:"
+
+
+def get_custom_id(role_id: str):
+    return f"{CUSTOM_ID_PREFIX}{role_id}"
+
 
 class BtnRoles(commands.Cog):
     def __init__(self, bot, *args, **kwargs):
@@ -38,7 +44,7 @@ class BtnRoles(commands.Cog):
             b = Button(
                 label=label,
                 emoji=config.get("emoji"),
-                custom_id=config.get("role_id"),
+                custom_id=get_custom_id(config.get("role_id")),
                 style=config.get("style", 1))
             btns.append(b)
 
@@ -47,7 +53,11 @@ class BtnRoles(commands.Cog):
 
     @commands.Cog.listener()
     async def on_button_click(self, inter):
-        role = inter.guild.get_role(int(inter.component.custom_id))
+        button_id = inter.component.custom_id
+        if not button_id.startswith(CUSTOM_ID_PREFIX):
+            return
+
+        role = inter.guild.get_role(int(button_id))
         if not role:
             return await inter.reply(
                 f"Something went wrong when giving you a role!",
