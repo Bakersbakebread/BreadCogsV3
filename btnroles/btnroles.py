@@ -57,6 +57,8 @@ class BtnRoles(commands.Cog):
         if not button_id.startswith(CUSTOM_ID_PREFIX):
             return
 
+        button_id = button_id.replace(CUSTOM_ID_PREFIX, "")
+
         role = inter.guild.get_role(int(button_id))
         if not role:
             return await inter.reply(
