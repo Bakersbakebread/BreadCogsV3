@@ -90,7 +90,7 @@ class BadDomains(commands.Cog):
         if await self.bot.is_automod_immune(message.author):
             return
 
-        content = message.clean_content.lower()
+        content = message.clean_content.lower().split(" ")
 
         try:
             contains_bad_domain = await self.contains_bad_domain(content)
