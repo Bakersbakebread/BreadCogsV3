@@ -1,7 +1,4 @@
 <h1 align="center">
-  <br>
-  <img src="https://cdn.discordapp.com/avatars/280730525960896513/b60c5a2164f2f43d4ac2b0931c903c35.png" width="200">
-  <br>
   Bread Cogs V3
   <br>
 </h1>
@@ -30,6 +27,11 @@
 | Cog Name      | Info          | Cheat |
 | ------------- |-------------| -----|
 | channelcontent      | Restrict your channels to be text or image only | `[p]cog install breadcogs channelcontent` |
+| autoreact      | Autoreacts to messages in a channel | `[p]cog install breadcogs autoreact` |
+| btnroles      | Add button-reaction-roles to your server, using only yaml! | `[p]cog install breadcogs btnroles` |
+| randomword      | Get random words and random stuff | `[p]cog install breadcogs randomword` |
+| roleadd      | Allow users to add roles, without perms to do so | `[p]cog install breadcogs roleword` |
+| teamshuffle      | Spit out teams for those in VC's | `[p]cog install breadcogs teamshuffle` |
 
 # Support
 If you have an issue with one of my cogs, please raise an issue on GitHub or reach out to me on discord in the `Red - Cog Support` server.
