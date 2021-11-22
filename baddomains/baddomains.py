@@ -1,5 +1,8 @@
 import json
 import logging
+import re
+from urllib.parse import urlparse
+
 import aiohttp
 import discord
 
@@ -90,10 +93,16 @@ class BadDomains(commands.Cog):
         if await self.bot.is_automod_immune(message.author):
             return
 
-        content = message.clean_content.lower().split(" ")
+        list_of_links = re.findall(r'(https?://[^\s]+)', message.clean_content.lower())
+
+        # parse the url and just use .netloc
+        list_of_links = [urlparse(url).netloc for url in list_of_links]
+
+        if not list_of_links:
+            return
 
         try:
-            contains_bad_domain = await self.contains_bad_domain(content)
+            contains_bad_domain = await self.contains_bad_domain(list_of_links)
             if contains_bad_domain:
                 await self.handle_bad_domain(message)
         except RuntimeError as e:
