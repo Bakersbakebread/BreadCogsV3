@@ -1,0 +1,13 @@
+{
+    "author": [
+        "Bread#0007"
+    ],
+    "description": "Detects bad domains and logs and deletes them",
+    "hidden": false,
+    "install_msg": "🍞 Thank you for installing baddomains, make sure to check out https://walshy.dev/ who created the list",
+    "tags": [
+        "domains",
+        "filter",
+        "delete"
+    ]
+}
