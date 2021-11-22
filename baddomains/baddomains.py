@@ -105,7 +105,9 @@ class BadDomains(commands.Cog):
         if self.domain_list is None:
             await self.populate_domain_list()
 
-        return any(substring in clean_content for substring in self.domain_list)
+        for domain in self.domain_list:
+            if domain in clean_content:
+                return True
 
     async def populate_domain_list(self):
         async with aiohttp.ClientSession() as session:
