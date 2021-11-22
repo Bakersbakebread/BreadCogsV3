@@ -1,6 +1,6 @@
 You can add button reaction roles to a message by calling 
 
-`[p]setroles <message>` where `<message>` is the message you want it to be.
+`[p]setroles <message>` where `<message>` is the message you want it to be, attach a yaml file and away you go!
 
 An example yaml:
 ```yaml
