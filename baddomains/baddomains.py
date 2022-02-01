@@ -149,6 +149,7 @@ class BadDomains(commands.Cog):
             for domain in list_of_links:
                 response = await self.api.check(domain)
                 if response.bad_domain:
+                    log.info(f"Bad domain found: {domain}")
                     await self.handle_bad_domain(message, response, domain)
 
         except RuntimeError as e:
@@ -163,23 +164,26 @@ class BadDomains(commands.Cog):
         log_channel = await self.config.guild(message.guild).log_channel()
 
         if response.detection.lower() == "community":
+            log.info(f"Community bad domain found, sending for report: {domain}")
             return await self.handle_reporting(message, response, domain)
+
+        action_reason = "[AutoMod] [BadDomain] - bad link detected"
 
         message_deleted = False
         if should_delete:
             try:
-                await message.delete()
+                await message.delete(reason=action_reason)
                 message_deleted = True
             except discord.errors.Forbidden or discord.errors.NotFound:
                 pass
 
-        action_reason = "[AutoMod] [BadDomain] - bad link detected"
         guild: discord.Guild = message.guild
 
         user_banned = False
         if should_ban:
             try:
                 await guild.ban(message.author, delete_message_days=1, reason=action_reason)
+                log.info(f"Banned user for bad domain, {domain}")
                 user_banned = True
             except discord.errors.Forbidden:
                 pass
@@ -189,6 +193,7 @@ class BadDomains(commands.Cog):
             try:
                 await guild.kick(message.author, reason=action_reason)
                 user_kicked = True
+                log.info(f"Kicked user for bad domain, {domain}")
             except discord.errors.Forbidden or discord.errors.NotFound:
                 pass
 
