@@ -81,7 +81,7 @@ class BadDomains(commands.Cog):
         )
 
     @baddomains_group.command(name="ban")
-    async def kick_command(self, ctx, should_ban: bool):
+    async def ban_command(self, ctx, should_ban: bool):
         """
         Set whether or not to delete a message when found.
 
