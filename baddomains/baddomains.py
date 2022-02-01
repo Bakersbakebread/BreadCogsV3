@@ -163,10 +163,6 @@ class BadDomains(commands.Cog):
         should_kick = await self.config.guild(message.guild).should_kick()
         log_channel = await self.config.guild(message.guild).log_channel()
 
-        if response.detection.lower() == "community":
-            log.info(f"Community bad domain found, sending for report: {domain}")
-            return await self.handle_reporting(message, response, domain)
-
         action_reason = "[AutoMod] [BadDomain] - bad link detected"
 
         message_deleted = False
