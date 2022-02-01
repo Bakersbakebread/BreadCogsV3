@@ -1,22 +1,23 @@
-import json
 import logging
 import re
-from urllib.parse import urlparse
-
-import aiohttp
 import discord
+from dislash import ActionRow, Button, ButtonStyle
 
 from redbot.core import Config, checks
 from redbot.core.commands import commands
+from .api import Api, CheckEndpointResponseModel
 
 log = logging.getLogger(name="red.breadcogs.baddomains")
 
 DEFAULT_GUILD_CONFIG = {
     "log_channel": None,
+    "report_channel": None,
     "should_delete": False,
+    "should_kick": False,
+    "should_ban": False,
 }
 
-DOMAIN_LIST_URL = "https://bad-domains.walshy.dev/domains.json"
+CUSTOM_ID_PREFIX = "badDomainBtn"
 
 
 class BadDomains(commands.Cog):
@@ -29,7 +30,13 @@ class BadDomains(commands.Cog):
         self.bot = bot
         self.config = Config.get_conf(self, identifier=280730525960896513)
         self.config.register_guild(**DEFAULT_GUILD_CONFIG)
-        self.domain_list = None
+        self.api = Api()
+
+    def cog_unload(self):
+        """
+        Teardown the slash client so we don't have multiple clients
+        """
+        self.bot.slash.teardown()
 
     @checks.admin_or_permissions(manage_guild=True)
     @commands.group(name="baddomains", aliases=["bd"])
@@ -60,6 +67,44 @@ class BadDomains(commands.Cog):
         return await ctx.send(
             f"I will {'delete messages' if should_delete else 'not do aything'}, when a bad domain is found."
         )
+
+    @baddomains_group.command(name="kick")
+    async def kick_command(self, ctx, should_kick: bool):
+        """
+        Set whether or not to delete a message when found.
+
+        should_delete takes in bools: `True` or `False`
+        """
+        await self.config.guild(ctx.guild).should_kick.set(should_kick)
+        return await ctx.send(
+            f"I will {'kick the user' if should_kick else 'not kick'}, when a bad domain is found."
+        )
+
+    @baddomains_group.command(name="ban")
+    async def kick_command(self, ctx, should_ban: bool):
+        """
+        Set whether or not to delete a message when found.
+
+        should_delete takes in bools: `True` or `False`
+        """
+        await self.config.guild(ctx.guild).should_ban.set(should_ban)
+        return await ctx.send(
+            f"I will {'ban the user' if should_ban else 'not ban'}, when a bad domain is found."
+        )
+
+    @baddomains_group.command(name="report")
+    async def report_channel(self, ctx, channel: discord.TextChannel = None):
+        """
+        Set whether or not to delete a message when found.
+
+        should_delete takes in bools: `True` or `False`
+        """
+        if channel is None:
+            await self.config.guild(ctx.guild).report_channel.set(None)
+            return await ctx.send("I've removed the report channel, this has disabled report messages.")
+
+        await self.config.guild(ctx.guild).report_channel.set(channel.id)
+        return await ctx.send(f"👍 I will send report messages to {channel}.")
 
     @baddomains_group.command(name="settings")
     async def settings_command(self, ctx):
@@ -95,46 +140,37 @@ class BadDomains(commands.Cog):
 
         list_of_links = re.findall(r'(https?://[^\s]+)', message.clean_content.lower())
 
-        # parse the url and just use .netloc
-        list_of_links = [urlparse(url).netloc for url in list_of_links]
-
         if not list_of_links:
             return
 
+        log.debug(list_of_links)
+
         try:
-            contains_bad_domain = await self.contains_bad_domain(list_of_links)
-            if contains_bad_domain:
-                await self.handle_bad_domain(message)
+            for domain in list_of_links:
+                response = await self.api.check(domain)
+                if response.bad_domain:
+                    await self.handle_bad_domain(message, response, domain)
+
         except RuntimeError as e:
             # lets just fail silently.
             log.exception(e)
             return
 
-    async def contains_bad_domain(self, clean_content):
-        if self.domain_list is None:
-            await self.populate_domain_list()
-
-        for domain in self.domain_list:
-            if domain in clean_content:
-                return True
-
-    async def populate_domain_list(self):
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url=DOMAIN_LIST_URL) as resp:
-                if resp.status == 200:
-                    resp_json = await resp.json()
-                    self.domain_list = resp_json
-                else:
-                    raise RuntimeError("Api returned bad status.")
-
-    async def handle_bad_domain(self, message):
+    async def handle_bad_domain(self, message, response, domain):
         should_delete = await self.config.guild(message.guild).should_delete()
+        should_ban = await self.config.guild(message.guild).should_ban()
+        should_kick = await self.config.guild(message.guild).should_kick()
         log_channel = await self.config.guild(message.guild).log_channel()
 
+        if response.detection.lower() == "community":
+            return await self.handle_reporting(message, response, domain)
+
+        message_deleted = False
         if should_delete:
             try:
                 await message.delete()
-            except discord.errors.Forbidden:
+                message_deleted = True
+            except discord.errors.Forbidden or discord.errors.NotFound:
                 pass
 
         if log_channel is not None:
@@ -147,6 +183,68 @@ class BadDomains(commands.Cog):
                 inline=False,
                 name="Message",
                 value=f"{message.clean_content}\n\n"
-                      f"\N{LINK SYMBOL} [Jump to message]({message.jump_url})"
             )
+            embed.add_field(
+                inline=False,
+                name="Bad domain",
+                value=domain
+            )
+            if not message_deleted:
+                embed.add_field(name="\N{LINK SYMBOL} Message not deleted",
+                                value=f"[Jump to message]({message.jump_url})")
+
             await message.guild.get_channel(log_channel).send(embed=embed)
+
+        action_reason = "[AutoMod] [BadDomain] - bad link detected"
+        guild: discord.Guild = message.guild
+
+        if should_ban:
+            try:
+                await guild.ban(message.author, delete_message_days=1, reason=action_reason)
+            except discord.errors.Forbidden:
+                pass
+
+        if should_kick:
+            try:
+                await guild.kick(message.author, reason=action_reason)
+            except discord.errors.Forbidden or discord.errors.NotFound:
+                pass
+
+    async def handle_reporting(self, message: discord.Message, response: CheckEndpointResponseModel, domain):
+        report_channel = await self.config.guild(message.guild).report_channel()
+        if report_channel is None:
+            return
+
+        channel = message.guild.get_channel(report_channel)
+        embed = response.to_report_embed(message)
+
+        btn = Button(
+            label="Report bad domain",
+            emoji=discord.PartialEmoji(name="👮"),
+            custom_id=f"{CUSTOM_ID_PREFIX}:{domain}",
+            style=ButtonStyle.primary)
+
+        row = ActionRow(btn)
+
+        await channel.send(embed=embed, components=[row])
+
+    @commands.Cog.listener()
+    async def on_button_click(self, inter):
+        button_id = inter.component.custom_id
+        if not button_id.startswith(CUSTOM_ID_PREFIX):
+            return
+
+        bad_domain = button_id.replace(CUSTOM_ID_PREFIX, "")
+
+        await self.api.report(bad_domain)
+
+        updated_embed = inter.message.embeds[0]
+        updated_embed.add_field(
+            inline=False,
+            name="Reported as bad",
+            value=f"{inter.author} marked this as a bad domain. Updating the list can take some time."
+        )
+        updated_embed.color = discord.Color.dark_green()
+        await inter.message.edit(embed=updated_embed, components=[])
+
+        await inter.reply(f"🙌 Thanks. I've reported this domain as being bad.")
