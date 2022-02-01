@@ -173,6 +173,25 @@ class BadDomains(commands.Cog):
             except discord.errors.Forbidden or discord.errors.NotFound:
                 pass
 
+        action_reason = "[AutoMod] [BadDomain] - bad link detected"
+        guild: discord.Guild = message.guild
+
+        user_banned = False
+        if should_ban:
+            try:
+                await guild.ban(message.author, delete_message_days=1, reason=action_reason)
+                user_banned = True
+            except discord.errors.Forbidden:
+                pass
+
+        user_kicked = False
+        if should_kick:
+            try:
+                await guild.kick(message.author, reason=action_reason)
+                user_kicked = True
+            except discord.errors.Forbidden or discord.errors.NotFound:
+                pass
+
         if log_channel is not None:
             embed = discord.Embed(title="Bad domain detected")
             embed.set_author(
@@ -193,22 +212,13 @@ class BadDomains(commands.Cog):
                 embed.add_field(name="\N{LINK SYMBOL} Message not deleted",
                                 value=f"[Jump to message]({message.jump_url})")
 
+            if user_banned:
+                embed.add_field(name="Action taken", value=f"{message.author} has been banned.")
+
+            if user_kicked:
+                embed.add_field(name="Action taken", value=f"{message.author} has been kicked.")
+
             await message.guild.get_channel(log_channel).send(embed=embed)
-
-        action_reason = "[AutoMod] [BadDomain] - bad link detected"
-        guild: discord.Guild = message.guild
-
-        if should_ban:
-            try:
-                await guild.ban(message.author, delete_message_days=1, reason=action_reason)
-            except discord.errors.Forbidden:
-                pass
-
-        if should_kick:
-            try:
-                await guild.kick(message.author, reason=action_reason)
-            except discord.errors.Forbidden or discord.errors.NotFound:
-                pass
 
     async def handle_reporting(self, message: discord.Message, response: CheckEndpointResponseModel, domain):
         report_channel = await self.config.guild(message.guild).report_channel()
