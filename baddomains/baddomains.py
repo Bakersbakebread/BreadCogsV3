@@ -20,6 +20,10 @@ DEFAULT_GUILD_CONFIG = {
 CUSTOM_ID_PREFIX = "badDomainBtn"
 
 
+def get_list_of_links_from_message(message: str) -> [str]:
+    return re.findall(r'(https?://[^\s]+)', message.lower())
+
+
 class BadDomains(commands.Cog):
     """Checks against a list of bad domains and reports it so.
 
@@ -138,7 +142,7 @@ class BadDomains(commands.Cog):
         if await self.bot.is_automod_immune(message.author):
             return
 
-        list_of_links = re.findall(r'(https?://[^\s]+)', message.clean_content.lower())
+        list_of_links = get_list_of_links_from_message(message.clean_content)
 
         if not list_of_links:
             return
@@ -157,7 +161,7 @@ class BadDomains(commands.Cog):
             log.exception(e)
             return
 
-    async def handle_bad_domain(self, message, response, domain):
+    async def handle_bad_domain(self, message: discord.Message, response, domain):
         should_delete = await self.config.guild(message.guild).should_delete()
         should_ban = await self.config.guild(message.guild).should_ban()
         should_kick = await self.config.guild(message.guild).should_kick()
@@ -168,9 +172,11 @@ class BadDomains(commands.Cog):
         message_deleted = False
         if should_delete:
             try:
-                await message.delete(reason=action_reason)
+                await message.delete()
                 message_deleted = True
-            except discord.errors.Forbidden or discord.errors.NotFound:
+                log.info(f"Deleted message with bad domain: {domain}")
+            except discord.errors.Forbidden or discord.errors.NotFound as e:
+                log.warning(f"Could not delete message with bad domain: {domain} - {e.args[0]}")
                 pass
 
         guild: discord.Guild = message.guild
@@ -181,7 +187,8 @@ class BadDomains(commands.Cog):
                 await guild.ban(message.author, delete_message_days=1, reason=action_reason)
                 log.info(f"Banned user for bad domain, {domain}")
                 user_banned = True
-            except discord.errors.Forbidden:
+            except discord.errors.Forbidden as e:
+                log.info(f"missing permissions to ban {message.author} - {e.args[0]}")
                 pass
 
         user_kicked = False
@@ -190,54 +197,70 @@ class BadDomains(commands.Cog):
                 await guild.kick(message.author, reason=action_reason)
                 user_kicked = True
                 log.info(f"Kicked user for bad domain, {domain}")
-            except discord.errors.Forbidden or discord.errors.NotFound:
+            except discord.errors.Forbidden or discord.errors.NotFound as e:
+                log.info(f"Failed to kick {message.author} - {e.args[0]}")
                 pass
 
-        if log_channel is not None:
-            embed = discord.Embed(title="Bad domain detected")
-            embed.set_author(
-                name=f"{message.author} - {message.author.id}",
-                icon_url=message.author.avatar_url
-            )
-            embed.add_field(
-                inline=False,
-                name="Message",
-                value=f"{message.clean_content}\n\n"
-            )
-            embed.add_field(
-                inline=False,
-                name="Bad domain",
-                value=domain
-            )
-            if not message_deleted:
-                embed.add_field(name="\N{LINK SYMBOL} Message not deleted",
-                                value=f"[Jump to message]({message.jump_url})")
-
-            if user_banned:
-                embed.add_field(name="Action taken", value=f"{message.author} has been banned.")
-
-            if user_kicked:
-                embed.add_field(name="Action taken", value=f"{message.author} has been kicked.")
-
-            await message.guild.get_channel(log_channel).send(embed=embed)
-
-    async def handle_reporting(self, message: discord.Message, response: CheckEndpointResponseModel, domain):
-        report_channel = await self.config.guild(message.guild).report_channel()
-        if report_channel is None:
+        if log_channel is None:
+            log.warning("No log set, failed to send message.")
             return
 
-        channel = message.guild.get_channel(report_channel)
-        embed = response.to_report_embed(message)
+        embed = discord.Embed(title="Bad domain detected")
+        embed.set_author(
+            name=f"{message.author} - {message.author.id}",
+            icon_url=message.author.avatar_url
+        )
+        embed.add_field(
+            inline=False,
+            name="Message",
+            value=f"{message.clean_content}\n\n"
+        )
+        embed.add_field(
+            inline=False,
+            name="Bad domain",
+            value=domain
+        )
+        if message_deleted:
+            embed.add_field(name="🗑 Message deleted",
+                            value=f"The message has been removed")
+
+        if not message_deleted:
+            embed.add_field(name="\N{LINK SYMBOL} Message not deleted",
+                            value=f"[Jump to message]({message.jump_url})")
+
+        if user_banned:
+            embed.add_field(name="Action taken", value=f"{message.author} has been banned.")
+
+        if user_kicked:
+            embed.add_field(name="Action taken", value=f"{message.author} has been kicked.")
+
+        channel = message.guild.get_channel(log_channel)
+        await channel.send(embed=embed)
+        log.info(f"Sent bad domain log to {channel}")
+
+    @baddomains_group.command(name="submit")
+    async def handle_reporting(self, ctx, *, message):
+
+        links = get_list_of_links_from_message(message)
+
+        if not links:
+            return await ctx.send("Mmm. I couldn't find any links in that message.")
 
         btn = Button(
             label="Report bad domain",
             emoji=discord.PartialEmoji(name="👮"),
-            custom_id=f"{CUSTOM_ID_PREFIX}:{domain}",
+            custom_id=f"{CUSTOM_ID_PREFIX}:{links[0]}",
             style=ButtonStyle.primary)
 
         row = ActionRow(btn)
 
-        await channel.send(embed=embed, components=[row])
+        embed = discord.Embed(
+            title="Thanks for your report",
+            description="To report this link as a bad domain, click the button below.")
+
+        embed.add_field(name="Bad domain found", value=links[0])
+
+        await ctx.send(embed=embed, components=[row])
 
     @commands.Cog.listener()
     async def on_button_click(self, inter):
@@ -258,4 +281,4 @@ class BadDomains(commands.Cog):
         updated_embed.color = discord.Color.dark_green()
         await inter.message.edit(embed=updated_embed, components=[])
 
-        await inter.reply(f"🙌 Thanks. I've reported this domain as being bad.")
+        await inter.reply(f"🙌 Thanks. I've reported this domain as being bad.", delete_after=5, ephemeral=True)
